@@ -1,0 +1,32 @@
+spring:
+#  databse connection
+  datasource:
+    url: jdbc:postgresql://localhost:5432/product_service_db
+    username: postgres
+    password: albin
+    driver-class-name: org.postgresql.Driver
+# hibernate configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+# actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,loggers,threaddump,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      simple:
+        enabled: true
+#port configuration
+server:
+  port: 8082
