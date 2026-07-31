@@ -7,9 +7,13 @@ import com.aegis.product_service.exception.ResourceNotFound;
 import com.aegis.product_service.mapper.CategoryMapper;
 import com.aegis.product_service.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class CategoryService {
 
@@ -37,5 +41,15 @@ public class CategoryService {
         // map to CategoryResponse Dto and return
         return categoryMapper.toResponse(savedCategory);
 
+    }
+    /*
+    * Retrieve all the categories from the categories DB
+    * */
+    public List<CategoryResponse> getAllCategories() {
+        List<Category> categories = categoryRepository.findAll();
+        log.info("categories size: {}", categories.size());
+        return categories.stream()
+                .map(categoryMapper::toResponse)
+                .toList();
     }
 }
