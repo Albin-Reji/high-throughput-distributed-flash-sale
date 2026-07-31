@@ -1,8 +1,11 @@
 package com.aegis.product_service.mapper;
 
 import com.aegis.product_service.dto.CategoryResponse;
+import com.aegis.product_service.dto.CategoryTreeResponse;
 import com.aegis.product_service.entity.Category;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class CategoryMapper {
@@ -23,5 +26,24 @@ public class CategoryMapper {
                                 category.getParentCategory().getName() : null
                 )
                 .build();
+    }
+
+    public CategoryTreeResponse mapToTree(Category category){
+        CategoryTreeResponse response = new CategoryTreeResponse();
+
+
+        response.setId(category.getId());
+        response.setName(category.getName());
+
+
+        response.setChildren(
+                category.getChildren()
+                        .stream()
+                        .map(this::mapToTree)
+                        .toList()
+        );
+
+
+        return response;
     }
 }
