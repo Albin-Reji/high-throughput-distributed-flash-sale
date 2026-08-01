@@ -1,7 +1,7 @@
 package com.aegis.product_service.mapper;
 
-import com.aegis.product_service.dto.CategoryResponse;
-import com.aegis.product_service.dto.CategoryTreeResponse;
+import com.aegis.product_service.dto.response.CategoryResponse;
+import com.aegis.product_service.dto.response.CategoryTreeResponse;
 import com.aegis.product_service.entity.Category;
 import org.springframework.stereotype.Component;
 

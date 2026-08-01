@@ -1,7 +1,7 @@
 package com.aegis.product_service.service;
 
-import com.aegis.product_service.dto.CategoryRequest;
-import com.aegis.product_service.dto.CategoryResponse;
+import com.aegis.product_service.dto.request.CategoryRequest;
+import com.aegis.product_service.dto.response.CategoryResponse;
 import com.aegis.product_service.entity.Category;
 import com.aegis.product_service.exception.ResourceNotFound;
 import com.aegis.product_service.mapper.CategoryMapper;

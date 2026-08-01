@@ -1,4 +1,4 @@
-package com.aegis.product_service.dto;
+package com.aegis.product_service.dto.common;
 
 import lombok.Builder;
 import lombok.Data;

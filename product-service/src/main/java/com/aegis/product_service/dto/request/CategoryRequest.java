@@ -1,4 +1,4 @@
-package com.aegis.product_service.dto;
+package com.aegis.product_service.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

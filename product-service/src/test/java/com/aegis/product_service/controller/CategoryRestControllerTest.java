@@ -1,9 +1,10 @@
 package com.aegis.product_service.controller;
 
-import com.aegis.product_service.dto.CategoryRequest;
-import com.aegis.product_service.dto.CategoryResponse;
-import com.aegis.product_service.dto.CategoryTreeResponse;
-import com.aegis.product_service.dto.PageResponse;
+import com.aegis.product_service.controller.publicapi.PublicCategoryController;
+import com.aegis.product_service.dto.request.CategoryRequest;
+import com.aegis.product_service.dto.response.CategoryResponse;
+import com.aegis.product_service.dto.response.CategoryTreeResponse;
+import com.aegis.product_service.dto.common.PageResponse;
 import com.aegis.product_service.exception.GlobalExceptionHandler;
 import com.aegis.product_service.exception.ResourceAlreadyExists;
 import com.aegis.product_service.exception.ResourceNotFound;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(CategoryRestController.class)
+@WebMvcTest(PublicCategoryController.class)
 @Import(GlobalExceptionHandler.class)
 class CategoryRestControllerTest {
 

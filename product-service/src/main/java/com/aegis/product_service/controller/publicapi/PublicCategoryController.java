@@ -1,15 +1,12 @@
-package com.aegis.product_service.controller;
+package com.aegis.product_service.controller.publicapi;
 
-import com.aegis.product_service.dto.CategoryRequest;
-import com.aegis.product_service.dto.CategoryResponse;
-import com.aegis.product_service.dto.CategoryTreeResponse;
-import com.aegis.product_service.dto.PageResponse;
+import com.aegis.product_service.dto.request.CategoryRequest;
+import com.aegis.product_service.dto.response.CategoryResponse;
+import com.aegis.product_service.dto.response.CategoryTreeResponse;
+import com.aegis.product_service.dto.common.PageResponse;
 import com.aegis.product_service.service.CategoryService;
 import jakarta.validation.Valid;
-import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +16,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/categories")
-public class CategoryRestController {
+public class PublicCategoryController {
 
     private final CategoryService categoryService;
 
@@ -53,25 +50,7 @@ public class CategoryRestController {
         return ResponseEntity.ok(categoryService.getCategoryById(id));
     }
 
-    //    update the category
-    @PutMapping("/{id}")
-    public ResponseEntity<CategoryResponse> updateCategoryById(@PathVariable("id") UUID id, @Valid @RequestBody CategoryRequest request) {
-        return ResponseEntity.ok(categoryService.putCategory(id, request));
-    }
-
-    //   partial update the category
-    @PatchMapping("/{id}")
-    public ResponseEntity<CategoryResponse> updateCategory(@PathVariable("id") UUID id, @Valid @RequestBody CategoryRequest request) {
-        return ResponseEntity.ok(categoryService.updateCategory(id, request));
-    }
-
-    //delete categories
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCategory(@PathVariable("id") UUID id) {
-        categoryService.deleteCategory(id);
-        return ResponseEntity.noContent().build();
-    }
-//    search categories
+    //    search categories
     @GetMapping("/search")
     public ResponseEntity<List<CategoryResponse>> searchCategory(@RequestParam("name") String name) {
         return ResponseEntity.ok(categoryService.searchCategories(name));

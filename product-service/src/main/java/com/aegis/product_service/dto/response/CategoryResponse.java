@@ -1,4 +1,4 @@
-package com.aegis.product_service.dto;
+package com.aegis.product_service.dto.response;
 
 import lombok.Builder;
 import lombok.Data;
