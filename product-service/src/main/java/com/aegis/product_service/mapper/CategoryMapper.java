@@ -5,13 +5,12 @@ import com.aegis.product_service.dto.CategoryTreeResponse;
 import com.aegis.product_service.entity.Category;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 
 @Component
 public class CategoryMapper {
 
 
-    public CategoryResponse toResponse(Category category){
+    public CategoryResponse toResponse(Category category) {
 
         return CategoryResponse.builder()
                 .id(category.getId())
@@ -28,7 +27,7 @@ public class CategoryMapper {
                 .build();
     }
 
-    public CategoryTreeResponse mapToTree(Category category){
+    public CategoryTreeResponse mapToTree(Category category) {
         CategoryTreeResponse response = new CategoryTreeResponse();
 
 

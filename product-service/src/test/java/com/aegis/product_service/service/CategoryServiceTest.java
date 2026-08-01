@@ -58,7 +58,7 @@ class CategoryServiceTest {
 
         assertThat(response).isNotNull();
         assertThat(response.getName()).isEqualTo("Electronics");
-        assertThat(response.getParentCategory()).isNull();
+        assertThat(response.getParentCategoryId()).isNull();
         verify(categoryRepository).save(any(Category.class));
     }
 

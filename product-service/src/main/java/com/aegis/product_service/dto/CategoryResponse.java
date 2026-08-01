@@ -2,6 +2,7 @@ package com.aegis.product_service.dto;
 
 import lombok.Builder;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 

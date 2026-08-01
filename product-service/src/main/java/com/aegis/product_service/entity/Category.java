@@ -12,7 +12,13 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "categories")
+@Table(name = "categories",
+        indexes = {
+                @Index(name = "idx_category_name", columnList = "name"),
+                @Index(name = "idx_category_parent", columnList = "parent_category_id")
+        }
+
+)
 @Getter
 @Setter
 @NoArgsConstructor
