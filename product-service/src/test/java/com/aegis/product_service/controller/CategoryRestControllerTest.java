@@ -1,5 +1,6 @@
 package com.aegis.product_service.controller;
 
+import com.aegis.product_service.controller.admin.AdminCategoryController;
 import com.aegis.product_service.controller.publicapi.PublicCategoryController;
 import com.aegis.product_service.dto.request.CategoryRequest;
 import com.aegis.product_service.dto.response.CategoryResponse;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PublicCategoryController.class)
+@WebMvcTest({PublicCategoryController.class, AdminCategoryController.class})
 @Import(GlobalExceptionHandler.class)
 class CategoryRestControllerTest {
 
@@ -218,7 +219,7 @@ class CategoryRestControllerTest {
                 }
                 """.formatted(parentId);
 
-        mockMvc.perform(put("/api/v1/categories/{id}", id)
+        mockMvc.perform(put("/api/v1/admin/categories/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonContent))
                 .andExpect(status().isOk())
@@ -243,7 +244,7 @@ class CategoryRestControllerTest {
                 }
                 """;
 
-        mockMvc.perform(patch("/api/v1/categories/{id}", id)
+        mockMvc.perform(patch("/api/v1/admin/categories/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonContent))
                 .andExpect(status().isOk())
@@ -255,7 +256,7 @@ class CategoryRestControllerTest {
         UUID id = UUID.randomUUID();
         doNothing().when(categoryService).deleteCategory(id);
 
-        mockMvc.perform(delete("/api/v1/categories/{id}", id))
+        mockMvc.perform(delete("/api/v1/admin/categories/{id}", id))
                 .andExpect(status().isNoContent());
 
         verify(categoryService).deleteCategory(id);
