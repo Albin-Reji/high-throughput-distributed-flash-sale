@@ -1,6 +1,9 @@
 package com.aegis.product_service.service;
 
+import com.aegis.product_service.dto.common.PageResponse;
+import com.aegis.product_service.dto.common.ProductSuccessResponse;
 import com.aegis.product_service.dto.request.ProductRequest;
+import com.aegis.product_service.dto.request.ProductUpdateRequest;
 import com.aegis.product_service.dto.response.ProductResponse;
 import com.aegis.product_service.entity.Category;
 import com.aegis.product_service.entity.Product;
@@ -14,11 +17,15 @@ import com.aegis.product_service.repository.ProductRepository;
 import com.aegis.product_service.repository.SkuRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,12 +37,19 @@ public class ProductService {
     private final SkuRepository skuRepository;
     private final ProductMapper productMapper;
 
+
+    /**
+     * <p>Creates a new product.</p>
+     *
+     * @param request
+     * @return {@link ProductSuccessResponse}
+     */
     @Transactional
-    public ProductResponse createProduct(@Valid ProductRequest request) {
-// check if category already exist
+    public ProductSuccessResponse createProduct(@Valid ProductRequest request) {
+        // check if category already exist
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFound("Category not found with id: " + request.getCategoryId()));
-// check for skucode is already exist
+        // check for skucode is already exist
         request.getSkus().forEach(skuRequest -> {
             if (skuRepository.existsBySkuCode(skuRequest.getSkuCode())) {
                 throw new ResourceAlreadyExists("SKU code already exists: " + skuRequest.getSkuCode());
@@ -52,6 +66,51 @@ public class ProductService {
         product.setSkus(skus);
 
         Product savedProduct = productRepository.save(product);
-        return productMapper.toResponse(savedProduct);
+        return new ProductSuccessResponse(savedProduct.getId(), savedProduct.getTitle(), "product created successfully");
+    }
+
+    /**
+     * <p>Updates a product by its ID.</p>
+     *
+     * @param id
+     * @param request
+     * @return {@link ProductSuccessResponse}
+     */
+    public ProductSuccessResponse updateProduct(UUID id, @Valid ProductUpdateRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFound("Product not found with id: " + id));
+
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFound("Category not found with id: " + request.getCategoryId()));
+
+        product.setCategory(category);
+        product.setTitle(request.getTitle());
+        product.setDescription(request.getDescription());
+
+        productRepository.save(product);
+        return new ProductSuccessResponse(
+                product.getId(),
+                product.getTitle(),
+                "product updated successfully");
+    }
+
+    public PageResponse<ProductResponse> getAllProducts(int page, int size) {
+        Pageable pageable = PageRequest.of(
+                page,
+                size);
+
+        Page<ProductResponse> productPage = productRepository.findAll(pageable)
+                .map(productMapper::toResponse);
+
+        return PageResponse.<ProductResponse>builder()
+                .content(productPage.getContent())
+                .first(productPage.isFirst())
+                .last(productPage.isLast())
+                .size(productPage.getSize())
+                .totalPages(productPage.getTotalPages())
+                .totalElements(productPage.getTotalElements())
+                .build();
     }
 }
+
+

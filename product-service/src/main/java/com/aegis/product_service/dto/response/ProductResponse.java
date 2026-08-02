@@ -19,7 +19,7 @@ public class ProductResponse {
     private String title;
     private String description;
 
-    private CategoryResponse category;
+    private ProductCategoryResponse category;
 
     private List<SkuResponse> skus;
 

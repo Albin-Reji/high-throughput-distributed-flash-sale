@@ -1,12 +1,8 @@
 package com.aegis.product_service.mapper;
 
 import com.aegis.product_service.dto.request.ProductAttributeRequest;
-import com.aegis.product_service.dto.request.ProductRequest;
 import com.aegis.product_service.dto.request.SkuRequest;
-import com.aegis.product_service.dto.response.CategoryResponse;
-import com.aegis.product_service.dto.response.ProductAttributeResponse;
-import com.aegis.product_service.dto.response.ProductResponse;
-import com.aegis.product_service.dto.response.SkuResponse;
+import com.aegis.product_service.dto.response.*;
 import com.aegis.product_service.entity.Product;
 import com.aegis.product_service.entity.ProductAttribute;
 import com.aegis.product_service.entity.Sku;
@@ -23,7 +19,7 @@ public class ProductMapper {
                 .description(product.getDescription())
 
                 .category(
-                        CategoryResponse.builder()
+                        ProductCategoryResponse.builder()
                                 .id(product.getCategory().getId())
                                 .name(product.getCategory().getName())
                                 .build()
@@ -56,6 +52,7 @@ public class ProductMapper {
 
                 .build();
     }
+
     public ProductAttribute toEntity(ProductAttributeRequest productAttributeRequest, Product product) {
         return ProductAttribute.builder()
                 .attributeName(productAttributeRequest.getName())
@@ -64,7 +61,7 @@ public class ProductMapper {
                 .build();
     }
 
-    public Sku toEntity(SkuRequest  skuRequest, Product product) {
+    public Sku toEntity(SkuRequest skuRequest, Product product) {
         return Sku.builder()
                 .skuCode(skuRequest.getSkuCode())
                 .size(skuRequest.getSize())
