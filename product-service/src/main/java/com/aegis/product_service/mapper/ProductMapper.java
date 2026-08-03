@@ -8,6 +8,8 @@ import com.aegis.product_service.entity.ProductAttribute;
 import com.aegis.product_service.entity.Sku;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
 @Component
 public class ProductMapper {
 
@@ -70,4 +72,17 @@ public class ProductMapper {
                 .product(product)
                 .build();
     }
+
+    public ProductSummaryResponse toSummaryResponse(Product product) {
+        return ProductSummaryResponse.builder()
+                .title(product.getTitle())
+                .description(product.getDescription())
+                .price(product.getSkus()
+                        .stream()
+                        .map(Sku::getPrice)
+                        .min(BigDecimal::compareTo)
+                        .orElse(null))
+                .build();
+    }
+
 }
