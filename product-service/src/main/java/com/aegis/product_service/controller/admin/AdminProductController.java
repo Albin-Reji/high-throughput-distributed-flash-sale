@@ -2,6 +2,7 @@ package com.aegis.product_service.controller.admin;
 
 import com.aegis.product_service.dto.common.PageResponse;
 import com.aegis.product_service.dto.common.ProductSuccessResponse;
+import com.aegis.product_service.dto.request.ProductPatchRequest;
 import com.aegis.product_service.dto.request.ProductRequest;
 import com.aegis.product_service.dto.request.ProductUpdateRequest;
 import com.aegis.product_service.dto.response.ProductResponse;
@@ -33,9 +34,20 @@ public class AdminProductController {
         return ResponseEntity.ok(productService.getAllProducts(page, size));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductResponse> getProductById(@PathVariable UUID id) {
+        return ResponseEntity.ok(productService.getProductById(id));
+    }
     @PutMapping("/{id}")
     public ResponseEntity<ProductSuccessResponse> updateProduct(@PathVariable("id") UUID id, @Valid @RequestBody ProductUpdateRequest request) {
-        // Placeholder for product update logic
         return ResponseEntity.ok(productService.updateProduct(id, request));
+    }
+    @PatchMapping("/{id}")
+    public ResponseEntity<ProductSuccessResponse> patchProduct(@PathVariable("id") UUID id, @Valid @RequestBody ProductPatchRequest request) {
+        return ResponseEntity.ok(productService.patchProduct(id, request));
+    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ProductSuccessResponse> deleteProduct(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(productService.deleteProduct(id));
     }
 }

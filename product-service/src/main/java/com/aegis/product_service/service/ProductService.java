@@ -2,6 +2,7 @@ package com.aegis.product_service.service;
 
 import com.aegis.product_service.dto.common.PageResponse;
 import com.aegis.product_service.dto.common.ProductSuccessResponse;
+import com.aegis.product_service.dto.request.ProductPatchRequest;
 import com.aegis.product_service.dto.request.ProductRequest;
 import com.aegis.product_service.dto.request.ProductUpdateRequest;
 import com.aegis.product_service.dto.response.ProductResponse;
@@ -76,6 +77,7 @@ public class ProductService {
      * @param request
      * @return {@link ProductSuccessResponse}
      */
+    @Transactional
     public ProductSuccessResponse updateProduct(UUID id, @Valid ProductUpdateRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFound("Product not found with id: " + id));
@@ -104,6 +106,77 @@ public class ProductService {
 
         return PageResponse.<ProductResponse>builder()
                 .content(productPage.getContent())
+                .first(productPage.isFirst())
+                .last(productPage.isLast())
+                .size(productPage.getSize())
+                .totalPages(productPage.getTotalPages())
+                .totalElements(productPage.getTotalElements())
+                .build();
+    }
+
+    public ProductResponse getProductById(UUID id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFound("Product not found with id: " + id));
+
+        return productMapper.toResponse(product);
+    }
+
+    @Transactional
+    public ProductSuccessResponse patchProduct(UUID id, @Valid ProductPatchRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFound("Product not found with id: " + id));
+
+        Category requestCategory = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFound("Category not found with id: " + request.getCategoryId()));
+
+        product.setTitle(request.getTitle() != null ? request.getTitle() : product.getTitle());
+        product.setDescription(request.getDescription() != null ? request.getDescription() : product.getDescription());
+        product.setCategory(requestCategory);
+
+        productRepository.save(product);
+        return new ProductSuccessResponse(
+                product.getId(),
+                product.getTitle(),
+                "product updated successfully");
+    }
+
+    @Transactional
+    public ProductSuccessResponse deleteProduct(UUID id) {
+        Product product= productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFound("Product not found with id: " + id));
+
+        productRepository.delete(product);
+
+        return new ProductSuccessResponse(
+                product.getId(),
+                product.getTitle(),
+                "product deleted successfully"
+        );
+    }
+
+    public PageResponse<ProductResponse> getAllProductsByPage(Pageable pageable) {
+        Page<ProductResponse> productPage=productRepository.findAll(pageable)
+                .map(productMapper::toResponse);
+
+        return PageResponse.<ProductResponse>builder()
+                .content(productPage.getContent())
+                .first(productPage.isFirst())
+                .last(productPage.isLast())
+                .size(productPage.getSize())
+                .totalPages(productPage.getTotalPages())
+                .totalElements(productPage.getTotalElements())
+                .build();
+
+    }
+
+    public PageResponse<ProductResponse> searchProductsByTitle(Pageable pageable, String query) {
+        Page<Product> productPage=productRepository.findByTitleContainingIgnoreCase(query, pageable);
+
+        return PageResponse.<ProductResponse>builder()
+                .content(productPage.getContent()
+                        .stream().
+                        map(productMapper::toResponse)
+                        .collect(Collectors.toCollection(ArrayList::new)))
                 .first(productPage.isFirst())
                 .last(productPage.isLast())
                 .size(productPage.getSize())
