@@ -2,9 +2,11 @@ package com.aegis.product_service.controller.admin;
 
 import com.aegis.product_service.dto.common.PageResponse;
 import com.aegis.product_service.dto.common.ProductSuccessResponse;
+import com.aegis.product_service.dto.common.SkuSuccessResponse;
 import com.aegis.product_service.dto.request.ProductPatchRequest;
 import com.aegis.product_service.dto.request.ProductRequest;
 import com.aegis.product_service.dto.request.ProductUpdateRequest;
+import com.aegis.product_service.dto.request.SkuRequest;
 import com.aegis.product_service.dto.response.ProductResponse;
 import com.aegis.product_service.service.ProductService;
 import jakarta.validation.Valid;
@@ -49,5 +51,10 @@ public class AdminProductController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ProductSuccessResponse> deleteProduct(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(productService.deleteProduct(id));
+    }
+
+    @PostMapping("/{productId}/skus")
+    public ResponseEntity<SkuSuccessResponse> createSku(@PathVariable("productId") UUID productId, @Valid @RequestBody SkuRequest request) {
+        return ResponseEntity.ok(productService.createSku(productId, request));
     }
 }

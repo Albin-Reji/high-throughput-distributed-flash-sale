@@ -2,9 +2,11 @@ package com.aegis.product_service.service;
 
 import com.aegis.product_service.dto.common.PageResponse;
 import com.aegis.product_service.dto.common.ProductSuccessResponse;
+import com.aegis.product_service.dto.common.SkuSuccessResponse;
 import com.aegis.product_service.dto.request.ProductPatchRequest;
 import com.aegis.product_service.dto.request.ProductRequest;
 import com.aegis.product_service.dto.request.ProductUpdateRequest;
+import com.aegis.product_service.dto.request.SkuRequest;
 import com.aegis.product_service.dto.response.ProductAttributeResponse;
 import com.aegis.product_service.dto.response.ProductResponse;
 import com.aegis.product_service.dto.response.ProductSummaryResponse;
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -307,6 +310,40 @@ public class ProductService {
                 .size(productAttributePage.getSize())
                 .totalPages(productAttributePage.getTotalPages())
                 .totalElements(productAttributePage.getTotalElements())
+                .build();
+    }
+
+    /**
+     * <p>Creates a new SKU for the specified product.</p>
+     * @param productId
+     * @param request
+     * @return {@link SkuSuccessResponse}
+     */
+    @Transactional
+    public SkuSuccessResponse createSku(UUID productId,  SkuRequest request) {
+
+        Product product=productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFound("Product not found with id: " + productId));
+
+        if (skuRepository.existsBySkuCode(request.getSkuCode())) {
+            throw new ResourceAlreadyExists("SKU code already exists: " + request.getSkuCode());
+        }
+
+        Sku sku=Sku.builder()
+                .skuCode(request.getSkuCode())
+                .color(request.getColor())
+                .size(request.getSize())
+                .price(request.getPrice())
+                .product(product)
+                .build();
+
+        product.getSkus().add(sku);
+
+        skuRepository.save(sku);
+        return SkuSuccessResponse.builder()
+                .id(sku.getId())
+                .skuCode(sku.getSkuCode())
+                .message("SKU created successfully")
                 .build();
     }
 }
