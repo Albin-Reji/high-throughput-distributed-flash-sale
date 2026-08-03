@@ -1,7 +1,10 @@
 package com.aegis.product_service.controller.publicapi;
 
 import com.aegis.product_service.dto.common.PageResponse;
+import com.aegis.product_service.dto.response.ProductAttributeResponse;
 import com.aegis.product_service.dto.response.ProductResponse;
+import com.aegis.product_service.dto.response.ProductSummaryResponse;
+import com.aegis.product_service.dto.response.SkuResponse;
 import com.aegis.product_service.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -47,5 +50,43 @@ public class PublicProductController {
             @RequestParam("query") String query
     ) {
         return ResponseEntity.ok(productService.searchProductsByTitle(pageable, query));
+    }
+
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<PageResponse<ProductSummaryResponse>> getProductsByCategory(
+            @PageableDefault(
+                    page = 0,
+                    size = 10,
+                    sort = "title",
+                    direction = Sort.Direction.ASC
+            ) Pageable pageable,
+            @PathVariable UUID categoryId
+    ) {
+        return ResponseEntity.ok(productService.getProductsByCategory(pageable, categoryId));
+    }
+
+    @GetMapping("{productId}/skus")
+    public ResponseEntity<PageResponse<SkuResponse>> getAllSkusByProductId(
+            @PageableDefault(
+                    page = 0,
+                    size = 10,
+                    sort = "skuCode",
+                    direction = Sort.Direction.ASC
+            ) Pageable pageable,
+            @PathVariable UUID productId
+    ) {
+        return ResponseEntity.ok(productService.getAllSkusByProductId(pageable, productId));
+    }
+    @GetMapping("/{productId}/attributes")
+    public ResponseEntity<PageResponse<ProductAttributeResponse>> getProductAttributesByProductId(
+            @PageableDefault(
+                    page = 0,
+                    size = 10,
+                    sort = "attributeName",
+                    direction = Sort.Direction.ASC
+            ) Pageable pageable,
+            @PathVariable UUID productId
+    ) {
+        return ResponseEntity.ok(productService.getProductAttributesByProductId(pageable, productId));
     }
 }
