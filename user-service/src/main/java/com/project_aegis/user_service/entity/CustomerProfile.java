@@ -18,6 +18,10 @@ import java.util.UUID;
                 @Index(
                         name = "idx_customer_profiles_email",
                         columnList = "email"
+                ),
+                @Index(
+                        name = "idx_customer_profiles_keycloak_user_id",
+                        columnList = "keycloak_user_id"
                 )
         }
 )
@@ -31,6 +35,15 @@ public class CustomerProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(
+            name = "keycloak_user_id",
+            nullable = false,
+            unique = true,
+            updatable = false,
+            length = 36
+    )
+    private String keycloakUserId;
 
     @Column(
             nullable = false,

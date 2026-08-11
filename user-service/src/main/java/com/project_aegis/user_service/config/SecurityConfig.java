@@ -6,6 +6,7 @@ import com.project_aegis.user_service.security.SecurityAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -36,9 +37,13 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**").permitAll()
 
+                        // Internal webhook endpoints (secured by API key, not JWT)
+                        .requestMatchers("/internal/**").permitAll()
+
                         // ADMIN endpoints
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-
+                        //Public Endpoint for customer registration
+                        .requestMatchers(HttpMethod.POST, "/api/v1/public/customers").permitAll()
                         // Everything else requires authentication
                         .anyRequest().authenticated())
 
@@ -54,6 +59,7 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 
 
 }
