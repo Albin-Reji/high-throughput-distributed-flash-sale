@@ -22,7 +22,7 @@ public class CustomerProfileController {
 
     /**
      * <p> </p>
-     * @param jwt
+     * @param jwt jwt is fetched from user's jwt
      * @return {@link ApiResponse} containing {@link CustomerProfileResponse}
      */
     @GetMapping("/me")
