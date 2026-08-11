@@ -36,7 +36,7 @@
 | 2.3 | `CustomerPreference` entity | ✅ | 1:1 with customer, marketing/sms/currency |
 | 2.4 | `AccountStatus` enum | ✅ | ACTIVE, SUSPENDED, DELETED |
 | 2.5 | `AddressType` enum | ✅ | DELIVERY, BILLING |
-| 2.6 | Add `INACTIVE` to `AccountStatus` enum | ⬜ | Needed for soft-deactivation |
+| 2.6 | Add `INACTIVE` to `AccountStatus` enum | ✅ | Needed for soft-deactivation |
 
 ---
 
