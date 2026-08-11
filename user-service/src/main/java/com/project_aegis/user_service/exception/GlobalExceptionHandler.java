@@ -20,6 +20,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GlobalExceptionHandler {
 
+        @ExceptionHandler(CustomerNotFoundException.class)
+        public ResponseEntity<ApiResponse<Void>> handleCustomerNotFoundException(CustomerNotFoundException e) {
+                log.warn("Customer not found: {}", e.getMessage());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(ApiResponse.<Void>builder()
+                                                .success(false)
+                                                .message(e.getMessage())
+                                                .build());
+        }
         /**
          * Handles validation errors from {@code @Valid} annotated request bodies.
          */

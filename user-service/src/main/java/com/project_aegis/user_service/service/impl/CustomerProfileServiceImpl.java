@@ -1,13 +1,18 @@
 package com.project_aegis.user_service.service.impl;
 
+import com.project_aegis.user_service.dto.customer.CustomerProfileResponse;
+import com.project_aegis.user_service.dto.response.ApiResponse;
 import com.project_aegis.user_service.dto.webhook.KeycloakUserRegisteredEvent;
 import com.project_aegis.user_service.entity.AccountStatus;
 import com.project_aegis.user_service.entity.CustomerPreference;
 import com.project_aegis.user_service.entity.CustomerProfile;
+import com.project_aegis.user_service.exception.CustomerNotFoundException;
+import com.project_aegis.user_service.mapper.CustomerProfileMapper;
 import com.project_aegis.user_service.repository.CustomerProfileRepository;
 import com.project_aegis.user_service.service.CustomerProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +24,7 @@ import java.util.Optional;
 public class CustomerProfileServiceImpl implements CustomerProfileService {
 
     private final CustomerProfileRepository customerProfileRepository;
+    private final CustomerProfileMapper customerProfileMapper;
 
     /**
      * Creates a new {@link CustomerProfile} from a Keycloak registration event,
@@ -64,5 +70,20 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
                 saved.getId(), saved.getKeycloakUserId(), saved.getEmail());
 
         return saved;
+    }
+
+    @Override
+    public ApiResponse<CustomerProfileResponse> getCurrentCustomer(String keycloakUserId) {
+// checking is user customer is present
+        CustomerProfile customerProfile =customerProfileRepository.findByKeycloakUserId(keycloakUserId)
+                .orElseThrow(() -> new CustomerNotFoundException("Customer profile not found "));
+
+        return ApiResponse.<CustomerProfileResponse>builder()
+                .success(true)
+                .message("Customer profile retrieved successfully")
+                .data(customerProfileMapper.toResponse(customerProfile))
+                .build();
+
+
     }
 }

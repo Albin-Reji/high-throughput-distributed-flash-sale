@@ -6,7 +6,6 @@ import com.project_aegis.user_service.security.SecurityAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -42,8 +41,8 @@ public class SecurityConfig {
 
                         // ADMIN endpoints
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                        //Public Endpoint for customer registration
-                        .requestMatchers(HttpMethod.POST, "/api/v1/public/customers").permitAll()
+                        // Customer endpoints should be authenticated
+                        .requestMatchers("/api/v1/customer/**").authenticated()
                         // Everything else requires authentication
                         .anyRequest().authenticated())
 
