@@ -1,6 +1,7 @@
 package com.project_aegis.user_service.service.impl;
 
-import com.project_aegis.user_service.dto.customer.CustomerProfileResponse;
+import com.project_aegis.user_service.dto.customer.request.CustomerUpdateRequest;
+import com.project_aegis.user_service.dto.customer.response.CustomerProfileResponse;
 import com.project_aegis.user_service.dto.response.ApiResponse;
 import com.project_aegis.user_service.dto.webhook.KeycloakUserRegisteredEvent;
 import com.project_aegis.user_service.entity.AccountStatus;
@@ -12,7 +13,6 @@ import com.project_aegis.user_service.repository.CustomerProfileRepository;
 import com.project_aegis.user_service.service.CustomerProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -74,7 +74,7 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
     @Override
     public ApiResponse<CustomerProfileResponse> getCurrentCustomer(String keycloakUserId) {
-// checking is user customer is present
+        // checking is user customer is present
         CustomerProfile customerProfile =customerProfileRepository.findByKeycloakUserId(keycloakUserId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer profile not found "));
 
@@ -86,4 +86,22 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
 
     }
+
+    @Override
+    public ApiResponse<CustomerProfileResponse> modifyCurrentUser(String keycloakUserId,
+                                                                  CustomerUpdateRequest customerUpdateRequest) {
+
+        CustomerProfile customerProfile =customerProfileRepository.findByKeycloakUserId(keycloakUserId)
+                .orElseThrow(()->new CustomerNotFoundException("Customer profile not found "));
+
+        customerProfileMapper.updateEntity(customerUpdateRequest, customerProfile);
+        customerProfileRepository.save(customerProfile);
+        return ApiResponse.<CustomerProfileResponse>builder()
+                .success(true)
+                .message("Customer profile updated successfully")
+                .data(customerProfileMapper.toResponse(customerProfile))
+                .build();
+
+    }
+
 }

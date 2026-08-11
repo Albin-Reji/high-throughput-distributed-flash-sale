@@ -82,18 +82,5 @@ public class GlobalExceptionHandler {
                                                 .build());
         }
 
-        /**
-         * Catch-all for unexpected exceptions.
-         */
-        @ExceptionHandler(Exception.class)
-        public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
 
-                log.error("Unexpected error", ex);
-
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(ApiResponse.<Void>builder()
-                                                .success(false)
-                                                .message("An unexpected error occurred")
-                                                .build());
-        }
 }

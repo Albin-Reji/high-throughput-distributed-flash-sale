@@ -1,10 +1,11 @@
 package com.project_aegis.user_service.service;
 
-import com.project_aegis.user_service.dto.customer.CustomerProfileResponse;
+import com.project_aegis.user_service.dto.customer.request.CustomerUpdateRequest;
+import com.project_aegis.user_service.dto.customer.response.CustomerProfileResponse;
 import com.project_aegis.user_service.dto.response.ApiResponse;
 import com.project_aegis.user_service.dto.webhook.KeycloakUserRegisteredEvent;
 import com.project_aegis.user_service.entity.CustomerProfile;
-import org.springframework.security.oauth2.jwt.Jwt;
+import jakarta.validation.Valid;
 
 /**
  * Service layer for managing customer profiles.
@@ -25,4 +26,6 @@ public interface CustomerProfileService {
 
 
     ApiResponse<CustomerProfileResponse> getCurrentCustomer(String keycloakUserId);
+
+    ApiResponse<CustomerProfileResponse> modifyCurrentUser(String keycloakUserId, @Valid CustomerUpdateRequest customerUpdateRequest);
 }

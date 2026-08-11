@@ -1,4 +1,4 @@
-package com.project_aegis.user_service.dto.customer;
+package com.project_aegis.user_service.dto.customer.response;
 
 import com.project_aegis.user_service.entity.AccountStatus;
 import lombok.Builder;
