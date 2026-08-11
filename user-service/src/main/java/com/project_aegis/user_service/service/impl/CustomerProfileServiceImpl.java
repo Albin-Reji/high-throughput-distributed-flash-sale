@@ -26,6 +26,8 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     private final CustomerProfileRepository customerProfileRepository;
     private final CustomerProfileMapper customerProfileMapper;
 
+
+
     /**
      * Creates a new {@link CustomerProfile} from a Keycloak registration event,
      * or returns the existing one if a profile with the same keycloakUserId
@@ -87,10 +89,36 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
     }
 
+    /**
+     * <p>Partial Update</p>
+     * @param keycloakUserId unique userId
+     * @param customerUpdateRequest customerUpdateRequest structure
+     * @return {@link ApiResponse} containing  {@link CustomerProfileResponse}
+     */
+
     @Override
+    @Transactional
     public ApiResponse<CustomerProfileResponse> modifyCurrentUser(String keycloakUserId,
                                                                   CustomerUpdateRequest customerUpdateRequest) {
 
+        CustomerProfile customerProfile =customerProfileRepository.findByKeycloakUserId(keycloakUserId)
+                .orElseThrow(()->new CustomerNotFoundException("Customer profile not found "));
+
+        customerProfileMapper.replaceEntity(customerUpdateRequest, customerProfile);
+
+        customerProfileRepository.save(customerProfile);
+        return ApiResponse.<CustomerProfileResponse>builder()
+                .success(true)
+                .message("Customer profile updated successfully")
+                .data(customerProfileMapper.toResponse(customerProfile))
+                .build();
+
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<CustomerProfileResponse> updateCurrentUser(String keycloakUserId,
+                                                                  CustomerUpdateRequest customerUpdateRequest) {
         CustomerProfile customerProfile =customerProfileRepository.findByKeycloakUserId(keycloakUserId)
                 .orElseThrow(()->new CustomerNotFoundException("Customer profile not found "));
 
@@ -101,7 +129,5 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
                 .message("Customer profile updated successfully")
                 .data(customerProfileMapper.toResponse(customerProfile))
                 .build();
-
     }
-
 }

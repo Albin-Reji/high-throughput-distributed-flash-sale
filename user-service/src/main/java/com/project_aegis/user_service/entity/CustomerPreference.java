@@ -16,7 +16,8 @@ public class CustomerPreference {
 
     @Id
     @OneToOne(fetch = FetchType.LAZY,
-            optional = false)
+            optional = false
+    )
     @JoinColumn(
             name = "customer_id",
             nullable = false

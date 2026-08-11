@@ -28,4 +28,6 @@ public interface CustomerProfileService {
     ApiResponse<CustomerProfileResponse> getCurrentCustomer(String keycloakUserId);
 
     ApiResponse<CustomerProfileResponse> modifyCurrentUser(String keycloakUserId, @Valid CustomerUpdateRequest customerUpdateRequest);
+
+    ApiResponse<CustomerProfileResponse> updateCurrentUser(String keycloakUserId, CustomerUpdateRequest customerUpdateRequest);
 }

@@ -38,7 +38,8 @@ public class SecurityConfig {
 
                         // Internal webhook endpoints (secured by API key, not JWT)
                         .requestMatchers("/internal/**").permitAll()
-
+                        // Public Api w/o Authentication
+                        .requestMatchers("/api/v1/public/**").permitAll()
                         // ADMIN endpoints
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         // Customer endpoints should be authenticated

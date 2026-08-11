@@ -41,4 +41,15 @@ public class CustomerProfileMapper {
 
         return profile;
     }
+    public CustomerProfile replaceEntity(
+            CustomerUpdateRequest request,
+            CustomerProfile profile) {
+
+        profile.setEmail(request.getEmail());
+        profile.setFirstName(request.getFirstName());
+        profile.setLastName(request.getLastName());
+        profile.setPhoneNumber(request.getPhoneNumber());
+
+        return profile;
+    }
 }
