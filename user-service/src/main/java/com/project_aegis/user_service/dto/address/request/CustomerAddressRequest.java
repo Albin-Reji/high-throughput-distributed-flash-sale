@@ -1,15 +1,15 @@
-package com.project_aegis.user_service.dto.address.response;
+package com.project_aegis.user_service.dto.address.request;
+
 
 import com.project_aegis.user_service.entity.AddressType;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-
-import java.util.UUID;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-public class CustomerAddressResponse {
-    private UUID id;
+public class CustomerAddressRequest {
     private AddressType addressType;
     private String addressLine1;
     private String addressLine2;

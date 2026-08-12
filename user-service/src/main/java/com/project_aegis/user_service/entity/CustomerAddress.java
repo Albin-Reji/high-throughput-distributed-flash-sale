@@ -18,6 +18,10 @@ import java.util.UUID;
                 @Index(
                         name = "idx_customer_addresses_customer_id",
                         columnList = "customer_id"
+                ),
+                @Index(
+                        name = "idx_customer_addresses_id",
+                        columnList = "id"
                 )
         }
 )

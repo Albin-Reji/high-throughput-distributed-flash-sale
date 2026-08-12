@@ -15,9 +15,14 @@ import java.util.UUID;
 public class CustomerPreference {
 
     @Id
-    @OneToOne(fetch = FetchType.LAZY,
+    @Column(name = "customer_id")
+    private UUID customerId;
+
+    @OneToOne(
+            fetch = FetchType.LAZY,
             optional = false
     )
+    @MapsId
     @JoinColumn(
             name = "customer_id",
             nullable = false
