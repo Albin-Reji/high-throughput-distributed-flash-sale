@@ -81,6 +81,18 @@ public class GlobalExceptionHandler {
                                                 .message("Data conflict — the resource may already exist")
                                                 .build());
         }
+        @ExceptionHandler(AddressNotFoundException.class)
+        public ResponseEntity<ApiResponse<Void>> handleAddressNotFoundException(
+                AddressNotFoundException ex) {
+
+                log.warn("Exception : {}", ex.getMessage());
+
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(ApiResponse.<Void>builder()
+                                .success(false)
+                                .message("Address not found (no address data in db ")
+                                .build());
+        }
 
 
 }

@@ -60,7 +60,7 @@
 | 4.4 | `SecurityAccessDeniedHandler` (403 handler) | ✅ | JSON response |
 | 4.5 | Internal webhook API key guard (`X-Internal-Api-Key`) | ✅ | `/internal/**` bypasses JWT |
 | 4.6 | `InternalApiProperties` config binding | ✅ | `@ConfigurationProperties` |
-| 4.7 | Update `SecurityConfig` for `/api/v1/customers/**` → `.authenticated()` | ⬜ | BOLA/IDOR defense |
+| 4.7 | Update `SecurityConfig` for `/api/v1/customers/**` → `.authenticated()` | ✅ | BOLA/IDOR defense |
 | 4.8 | Update `SecurityConfig` for `/api/v1/admin/**` → `.hasRole("ADMIN")` | ✅ | Already configured |
 
 ---
@@ -86,9 +86,9 @@
 | 6.2 | `KeycloakUserRegisteredEvent` (webhook DTO) | ✅ | |
 | 6.3 | `CustomerProfileResponse` | ✅ | `fromEntity()` mapper |
 | 6.4 | `UpdateCustomerProfileRequest` | ✅ | firstName, lastName, phoneNumber |
-| 6.5 | `CreateAddressRequest` | ⬜ | |
+| 6.5 | `CreateAddressRequest` | ✅ | |
 | 6.6 | `UpdateAddressRequest` | ⬜ | |
-| 6.7 | `CustomerAddressResponse` | ⬜ | `fromEntity()` mapper |
+| 6.7 | `CustomerAddressResponse` | ✅ | `fromEntity()` mapper |
 | 6.8 | `UpdatePreferenceRequest` | ⬜ | |
 | 6.9 | `CustomerPreferenceResponse` | ⬜ | `fromEntity()` mapper |
 | 6.10 | `AdminUpdateCustomerRequest` | ⬜ | |
@@ -116,11 +116,11 @@
 |---|------|--------|-------|
 | 8.1 | `CustomerProfileService` interface | ✅ | |
 | 8.2 | `CustomerProfileServiceImpl` (webhook flow) | ✅ | Idempotent creation |
-| 8.3 | `getProfileByKeycloakUserId()` | ⬜ | For `GET /me` |
-| 8.4 | `updateProfile()` | ⬜ | For `PUT /me` |
+| 8.3 | `getProfileByKeycloakUserId()` | ✅ | For `GET /me` |
+| 8.4 | `updateProfile()` | ✅ | For `PUT /me` |
 | 8.5 | `deactivateAccount()` | ⬜ | Soft deactivation |
-| 8.6 | `CustomerAddressService` interface | ⬜ | |
-| 8.7 | `CustomerAddressServiceImpl` | ⬜ | CRUD + default address logic |
+| 8.6 | `CustomerAddressService` interface | ✅ | |
+| 8.7 | `CustomerAddressServiceImpl` | ✅ | CRUD + default address logic |
 | 8.8 | `CustomerPreferenceService` interface | ⬜ | |
 | 8.9 | `CustomerPreferenceServiceImpl` | ⬜ | Get + Update |
 | 8.10 | `AdminCustomerService` interface | ⬜ | |
@@ -140,7 +140,7 @@
 
 | # | Method | Endpoint | Auth | Status |
 |---|--------|----------|------|--------|
-| 9.2.1 | `POST` | `/api/v1/public/customers` | None (`permitAll`) | ⬜ |
+| 9.2.1 | `POST` | `/api/v1/public/customers` | None (`permitAll`) | ✅ |
 
 ### 9.3 Customer Self-Service APIs (`/api/v1/customers/me/**`)
 
@@ -150,15 +150,15 @@
 
 | # | Method | Endpoint | Description | Status |
 |---|--------|----------|-------------|--------|
-| 9.3.1 | `GET` | `/api/v1/customers/me` | Get my profile | ⬜ |
-| 9.3.2 | `PUT` | `/api/v1/customers/me` | Update my profile (name, phone) | ⬜ |
+| 9.3.1 | `GET` | `/api/v1/customers/me` | Get my profile | ✅ |
+| 9.3.2 | `PUT` | `/api/v1/customers/me` | Update my profile (name, phone) | ✅ |
 
 #### Addresses
 
 | # | Method | Endpoint | Description | Status |
 |---|--------|----------|-------------|--------|
-| 9.3.3 | `POST` | `/api/v1/customers/me/addresses` | Add new address | ⬜ |
-| 9.3.4 | `GET` | `/api/v1/customers/me/addresses` | List my addresses | ⬜ |
+| 9.3.3 | `POST` | `/api/v1/customers/me/addresses` | Add new address | ✅ |
+| 9.3.4 | `GET` | `/api/v1/customers/me/addresses` | List my addresses | ✅ |
 | 9.3.5 | `GET` | `/api/v1/customers/me/addresses/{addressId}` | Get single address | ⬜ |
 | 9.3.6 | `PUT` | `/api/v1/customers/me/addresses/{addressId}` | Update address | ⬜ |
 | 9.3.7 | `DELETE` | `/api/v1/customers/me/addresses/{addressId}` | Delete address | ⬜ |
