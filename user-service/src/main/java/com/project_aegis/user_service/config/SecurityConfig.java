@@ -43,7 +43,7 @@ public class SecurityConfig {
                         // ADMIN endpoints
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         // Customer endpoints should be authenticated
-                        .requestMatchers("/api/v1/customer/**").authenticated()
+                        .requestMatchers("/api/v1/customers/**", "/api/v1/customer/**").authenticated()
                         // Everything else requires authentication
                         .anyRequest().authenticated())
 
