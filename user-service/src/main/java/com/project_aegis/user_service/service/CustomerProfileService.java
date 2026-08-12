@@ -2,10 +2,18 @@ package com.project_aegis.user_service.service;
 
 import com.project_aegis.user_service.dto.customer.request.CustomerUpdateRequest;
 import com.project_aegis.user_service.dto.customer.response.CustomerProfileResponse;
+import com.project_aegis.user_service.dto.request.StatusRequest;
 import com.project_aegis.user_service.dto.response.ApiResponse;
+import com.project_aegis.user_service.dto.response.PageResponse;
+import com.project_aegis.user_service.dto.response.ProfileResponse;
+import com.project_aegis.user_service.dto.response.StatusResponse;
 import com.project_aegis.user_service.dto.webhook.KeycloakUserRegisteredEvent;
 import com.project_aegis.user_service.entity.CustomerProfile;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.util.UUID;
 
 /**
  * Service layer for managing customer profiles.
@@ -30,4 +38,12 @@ public interface CustomerProfileService {
     ApiResponse<CustomerProfileResponse> modifyCurrentUser(String keycloakUserId, @Valid CustomerUpdateRequest customerUpdateRequest);
 
     ApiResponse<CustomerProfileResponse> updateCurrentUser(String keycloakUserId, CustomerUpdateRequest customerUpdateRequest);
+
+    PageResponse<CustomerProfileResponse> getAllCustomers(Pageable pageable);
+
+    ApiResponse<ProfileResponse> getCustomerByCustomerId(UUID customerId);
+
+    ApiResponse<StatusResponse> updateCustomerStatus(UUID customerId, StatusRequest request);
+
+    ApiResponse<Void> deleteCustomerByAdmin(UUID customerId);
 }

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -87,10 +88,23 @@ public class GlobalExceptionHandler {
 
                 log.warn("Exception : {}", ex.getMessage());
 
-                return ResponseEntity.status(HttpStatus.CONFLICT)
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ApiResponse.<Void>builder()
                                 .success(false)
                                 .message("Address not found (no address data in db ")
+                                .build());
+        }
+
+        @ExceptionHandler(HttpMessageNotReadableException.class)
+        public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(
+                HttpMessageNotReadableException ex) {
+
+                log.warn("Exception : {}", ex.getMessage());
+
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.<Void>builder()
+                                .success(false)
+                                .message("Http message are not readable or the RequestBody data doesnt match Object data")
                                 .build());
         }
 
