@@ -1,4 +1,4 @@
-package com.project_aegis.user_service.security;
+package com.aegis.product_service.security;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
