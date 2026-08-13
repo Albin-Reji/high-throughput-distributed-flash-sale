@@ -1,0 +1,9 @@
+target/
+.idea/
+.vscode/
+.git/
+.env
+*.iml
+*.iws
+*.ipr
+.mvn/wrapper/maven-wrapper.jar
