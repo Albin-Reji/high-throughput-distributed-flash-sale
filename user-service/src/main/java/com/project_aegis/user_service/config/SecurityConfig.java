@@ -3,7 +3,6 @@ package com.project_aegis.user_service.config;
 import com.project_aegis.user_service.security.KeycloakJwtAuthenticationConverter;
 import com.project_aegis.user_service.security.SecurityAccessDeniedHandler;
 import com.project_aegis.user_service.security.SecurityAuthenticationEntryPoint;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -12,12 +11,16 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@RequiredArgsConstructor
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final SecurityAuthenticationEntryPoint securityAuthenticationEntryPoint;
     private final SecurityAccessDeniedHandler securityAccessDeniedHandler;
+
+    public SecurityConfig(SecurityAuthenticationEntryPoint securityAuthenticationEntryPoint, SecurityAccessDeniedHandler securityAccessDeniedHandler) {
+        this.securityAuthenticationEntryPoint = securityAuthenticationEntryPoint;
+        this.securityAccessDeniedHandler = securityAccessDeniedHandler;
+    }
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
@@ -25,7 +28,9 @@ public class SecurityConfig {
             throws Exception {
 
         http
-                // REST API -> disable CSRF
+                // Stateless REST API using Bearer JWT authentication.
+                // Authentication credentials are supplied explicitly via the Authorization header,
+                // so CSRF protection is not required.
                 .csrf(AbstractHttpConfigurer::disable)
 
                 .authorizeHttpRequests(auth -> auth

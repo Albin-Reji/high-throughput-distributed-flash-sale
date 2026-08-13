@@ -47,8 +47,7 @@ public class CustomerProfile {
 
     @Column(
             nullable = false,
-            unique = true,
-            length = 255
+            unique = true
     )
     @Email
     private String email;

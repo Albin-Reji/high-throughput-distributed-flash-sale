@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.hibernate.query.Page.first;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +36,7 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     private final CustomerProfileRepository customerProfileRepository;
     private final CustomerProfileMapper customerProfileMapper;
 
-
+    private static final String CUSTOMER_PROFILE_NOT_FOUND="Customer profile not found ";
 
     /**
      * Creates a new {@link CustomerProfile} from a Keycloak registration event,
@@ -89,7 +88,7 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     public ApiResponse<CustomerProfileResponse> getCurrentCustomer(String keycloakUserId) {
         // checking is user customer is present
         CustomerProfile customerProfile =customerProfileRepository.findByKeycloakUserId(keycloakUserId)
-                .orElseThrow(() -> new CustomerNotFoundException("Customer profile not found "));
+                .orElseThrow(() -> new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
 
         return ApiResponse.<CustomerProfileResponse>builder()
                 .success(true)
@@ -113,7 +112,7 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
                                                                   CustomerUpdateRequest customerUpdateRequest) {
 
         CustomerProfile customerProfile =customerProfileRepository.findByKeycloakUserId(keycloakUserId)
-                .orElseThrow(()->new CustomerNotFoundException("Customer profile not found "));
+                .orElseThrow(()->new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
 
         customerProfileMapper.replaceEntity(customerUpdateRequest, customerProfile);
 
@@ -131,7 +130,7 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     public ApiResponse<CustomerProfileResponse> updateCurrentUser(String keycloakUserId,
                                                                   CustomerUpdateRequest customerUpdateRequest) {
         CustomerProfile customerProfile =customerProfileRepository.findByKeycloakUserId(keycloakUserId)
-                .orElseThrow(()->new CustomerNotFoundException("Customer profile not found "));
+                .orElseThrow(()->new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
 
         customerProfileMapper.updateEntity(customerUpdateRequest, customerProfile);
         customerProfileRepository.save(customerProfile);
@@ -163,7 +162,7 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     @Override
     public ApiResponse<ProfileResponse> getCustomerByCustomerId(UUID customerId) {
         CustomerProfile profile =customerProfileRepository.findById(customerId)
-                .orElseThrow(()-> new CustomerNotFoundException("Customer profile not found "));
+                .orElseThrow(()-> new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
 
         return ApiResponse.<ProfileResponse>builder()
                 .success(true)
@@ -177,7 +176,7 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     @Transactional
     public ApiResponse<StatusResponse> updateCustomerStatus(UUID customerId, StatusRequest request) {
         CustomerProfile profile=customerProfileRepository.findById(customerId)
-                .orElseThrow(()->new CustomerNotFoundException("Customer profile not found "));
+                .orElseThrow(()->new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
 
         profile.setAccountStatus(request.getAccountStatus());
 
@@ -198,12 +197,12 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     @Override
     public ApiResponse<Void> deleteCustomerByAdmin(UUID customerId) {
         CustomerProfile profile=customerProfileRepository.findById(customerId)
-                .orElseThrow(()->new CustomerNotFoundException("Customer profile not found "));
+                .orElseThrow(()->new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
 
         customerProfileRepository.delete(profile);
         return ApiResponse.<Void>builder()
                 .success(true)
-                .message("customer profile deleted successfullyc")
+                .message("customer profile deleted successfully")
                 .build();
     }
 }

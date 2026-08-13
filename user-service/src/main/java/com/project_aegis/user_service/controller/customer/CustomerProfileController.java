@@ -32,7 +32,7 @@ public class CustomerProfileController {
     /**
      * Modify existing customer profile (partial update).
      *
-     * @param jwt authenticated JWT token
+     * @param jwt                   authenticated JWT token
      * @param customerUpdateRequest update payload
      * @return {@link ApiResponse} containing {@link CustomerProfileResponse}
      */
@@ -47,7 +47,7 @@ public class CustomerProfileController {
     /**
      * Update existing customer profile (full update).
      *
-     * @param jwt authenticated JWT token
+     * @param jwt                   authenticated JWT token
      * @param customerUpdateRequest update payload
      * @return {@link ApiResponse} containing {@link CustomerProfileResponse}
      */

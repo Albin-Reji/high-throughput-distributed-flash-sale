@@ -8,7 +8,6 @@ import com.project_aegis.user_service.entity.CustomerProfile;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -40,9 +39,8 @@ public class CustomerProfileMapper {
      *
      * @param request update Request
      * @param profile Updating the  profile Object from DB
-     * @return {@link CustomerProfile }
      */
-    public CustomerProfile updateEntity(CustomerUpdateRequest request, CustomerProfile profile) {
+    public void updateEntity(CustomerUpdateRequest request, CustomerProfile profile) {
 
         if (request.getEmail() != null) {
             profile.setEmail(request.getEmail());
@@ -59,10 +57,9 @@ public class CustomerProfileMapper {
             profile.setPhoneNumber(request.getPhoneNumber());
         }
 
-        return profile;
     }
 
-    public CustomerProfile replaceEntity(
+    public void replaceEntity(
             CustomerUpdateRequest request,
             CustomerProfile profile) {
 
@@ -71,7 +68,6 @@ public class CustomerProfileMapper {
         profile.setLastName(request.getLastName());
         profile.setPhoneNumber(request.getPhoneNumber());
 
-        return profile;
     }
 
     public ProfileResponse toProfileResponse(CustomerProfile profile) {
@@ -85,12 +81,16 @@ public class CustomerProfileMapper {
                 .createdAt(profile.getCreatedAt())
                 .updatedAt(profile.getUpdatedAt())
                 .preference(CustomerPreferenceResponse.builder()
-                        .marketingEmailsEnabled(profile.getPreference().isMarketingEmailsEnabled())
-                        .smsNotificationsEnabled(profile.getPreference().isSmsNotificationsEnabled())
-                        .preferredCurrency(profile.getPreference().getPreferredCurrency())
+                        .marketingEmailsEnabled(profile.getPreference()
+                                .isMarketingEmailsEnabled())
+                        .smsNotificationsEnabled(profile.getPreference()
+                                .isSmsNotificationsEnabled())
+                        .preferredCurrency(profile.getPreference()
+                                .getPreferredCurrency())
                         .build()
                 )
-                .addresses(profile.getAddresses().stream()
+                .addresses(profile.getAddresses()
+                        .stream()
                         .map(customerAddressMapper::toResponse)
                         .collect(Collectors.toCollection(ArrayList::new))
                 )

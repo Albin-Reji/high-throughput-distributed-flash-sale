@@ -48,14 +48,12 @@ public class CustomerAddress {
 
     @Column(
             name = "address_line_1",
-            nullable = false,
-            length = 255
+            nullable = false
     )
     private String addressLine1;
 
     @Column(
-            name = "address_line_2",
-            length = 255
+            name = "address_line_2"
     )
     private String addressLine2;
 

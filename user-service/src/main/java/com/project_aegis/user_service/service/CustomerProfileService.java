@@ -10,7 +10,6 @@ import com.project_aegis.user_service.dto.response.StatusResponse;
 import com.project_aegis.user_service.dto.webhook.KeycloakUserRegisteredEvent;
 import com.project_aegis.user_service.entity.CustomerProfile;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;

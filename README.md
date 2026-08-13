@@ -1,6 +1,7 @@
 # Project Aegis 🛡️
 
-**Project Aegis** is an enterprise microservices-based application platform built using modern Java and Spring Boot technologies.
+**Project Aegis** is an enterprise microservices-based application platform built using modern Java and Spring Boot
+technologies.
 
 ---
 
@@ -16,6 +17,7 @@ project-aegis/
 ## 📦 Services
 
 ### 1. Product Service (`/product-service`)
+
 The **Product Service** manages product catalogs, persistence, and REST APIs for domain entities.
 
 - **Tech Stack**: Java 21, Spring Boot 4.x, Spring Data JPA, PostgreSQL, Lombok, Spring Boot Actuator
@@ -27,6 +29,7 @@ The **Product Service** manages product catalogs, persistence, and REST APIs for
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - **Java**: JDK 21 or higher
 - **Database**: PostgreSQL database server
 - **Build System**: Maven (wrapper included)
