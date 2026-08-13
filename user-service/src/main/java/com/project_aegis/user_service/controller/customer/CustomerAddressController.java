@@ -2,7 +2,7 @@ package com.project_aegis.user_service.controller.customer;
 
 import com.project_aegis.user_service.dto.address.response.CustomerAddressResponse;
 import com.project_aegis.user_service.dto.address.response.DefaultAddressResponse;
-import com.project_aegis.user_service.dto.customer.request.CustomerAddressRequest;
+import com.project_aegis.user_service.dto.address.request.CustomerAddressRequest;
 import com.project_aegis.user_service.dto.response.ApiResponse;
 import com.project_aegis.user_service.service.CustomerAddressService;
 import jakarta.validation.Valid;

@@ -3,7 +3,6 @@ package com.project_aegis.user_service.dto.response;
 import com.project_aegis.user_service.dto.address.response.CustomerAddressResponse;
 import com.project_aegis.user_service.dto.customer.response.CustomerPreferenceResponse;
 import com.project_aegis.user_service.entity.AccountStatus;
-import com.project_aegis.user_service.entity.CustomerAddress;
 import lombok.Builder;
 import lombok.Data;
 

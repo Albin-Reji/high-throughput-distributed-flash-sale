@@ -2,10 +2,10 @@ package com.aegis.product_service.controller;
 
 import com.aegis.product_service.controller.admin.AdminCategoryController;
 import com.aegis.product_service.controller.publicapi.PublicCategoryController;
+import com.aegis.product_service.dto.common.PageResponse;
 import com.aegis.product_service.dto.request.CategoryRequest;
 import com.aegis.product_service.dto.response.CategoryResponse;
 import com.aegis.product_service.dto.response.CategoryTreeResponse;
-import com.aegis.product_service.dto.common.PageResponse;
 import com.aegis.product_service.exception.GlobalExceptionHandler;
 import com.aegis.product_service.exception.ResourceAlreadyExists;
 import com.aegis.product_service.exception.ResourceNotFound;
@@ -27,11 +27,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -254,7 +250,8 @@ class CategoryRestControllerTest {
     @Test
     void deleteCategory_shouldReturn204() throws Exception {
         UUID id = UUID.randomUUID();
-        doNothing().when(categoryService).deleteCategory(id);
+        doNothing().when(categoryService)
+                .deleteCategory(id);
 
         mockMvc.perform(delete("/api/v1/admin/categories/{id}", id))
                 .andExpect(status().isNoContent());

@@ -86,7 +86,7 @@ public class GlobalExceptionHandler {
         public ResponseEntity<ApiResponse<Void>> handleAddressNotFoundException(
                 AddressNotFoundException ex) {
 
-                log.warn("Exception : {}", ex.getMessage());
+                log.warn("Exception  Message for DataIntegrityViolationException: {}", ex.getMessage());
 
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ApiResponse.<Void>builder()
@@ -99,7 +99,7 @@ public class GlobalExceptionHandler {
         public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(
                 HttpMessageNotReadableException ex) {
 
-                log.warn("Exception : {}", ex.getMessage());
+                log.warn("Exception message for HttpMessageNotReadableException: {}", ex.getMessage());
 
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(ApiResponse.<Void>builder()

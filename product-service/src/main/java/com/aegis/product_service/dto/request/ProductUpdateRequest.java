@@ -1,6 +1,5 @@
 package com.aegis.product_service.dto.request;
 
-import com.aegis.product_service.entity.Category;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

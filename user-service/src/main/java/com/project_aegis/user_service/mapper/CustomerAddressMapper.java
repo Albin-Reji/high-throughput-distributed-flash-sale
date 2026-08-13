@@ -1,7 +1,7 @@
 package com.project_aegis.user_service.mapper;
 
 import com.project_aegis.user_service.dto.address.response.CustomerAddressResponse;
-import com.project_aegis.user_service.dto.customer.request.CustomerAddressRequest;
+import com.project_aegis.user_service.dto.address.request.CustomerAddressRequest;
 import com.project_aegis.user_service.entity.CustomerAddress;
 import lombok.Builder;
 import lombok.Data;

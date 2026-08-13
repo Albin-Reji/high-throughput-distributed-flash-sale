@@ -3,6 +3,9 @@ package com.project_aegis.user_service.security;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.AuthenticationException;
@@ -22,6 +25,7 @@ import java.util.Map;
  */
 @Component
 @RequiredArgsConstructor
+
 public class SecurityAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper;
@@ -39,7 +43,8 @@ public class SecurityAuthenticationEntryPoint implements AuthenticationEntryPoin
                 "error", "Unauthorized",
                 "message", "Authentication is required to access this resource",
                 "path", request.getRequestURI(),
-                "timestamp", Instant.now().toString()
+                "timestamp", Instant.now()
+                        .toString()
         );
 
         objectMapper.writeValue(response.getOutputStream(), body);

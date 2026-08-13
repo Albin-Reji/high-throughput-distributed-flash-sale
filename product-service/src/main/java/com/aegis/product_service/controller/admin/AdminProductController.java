@@ -9,8 +9,6 @@ import com.aegis.product_service.dto.response.ProductResponse;
 import com.aegis.product_service.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.repository.support.Repositories;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,8 +26,9 @@ public class AdminProductController {
         // Placeholder for product creation logic
         return ResponseEntity.ok(productService.createProduct(request));
     }
+
     @GetMapping
-    public ResponseEntity<PageResponse<ProductResponse>> getAllProducts(@RequestParam(name="page", defaultValue = "0") int page,
+    public ResponseEntity<PageResponse<ProductResponse>> getAllProducts(@RequestParam(name = "page", defaultValue = "0") int page,
                                                                         @RequestParam(name = "size", defaultValue = "10") int size) {
         return ResponseEntity.ok(productService.getAllProducts(page, size));
     }
@@ -38,14 +37,17 @@ public class AdminProductController {
     public ResponseEntity<ProductResponse> getProductById(@PathVariable UUID id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
+
     @PutMapping("/{id}")
     public ResponseEntity<ProductSuccessResponse> updateProduct(@PathVariable("id") UUID id, @Valid @RequestBody ProductUpdateRequest request) {
         return ResponseEntity.ok(productService.updateProduct(id, request));
     }
+
     @PatchMapping("/{id}")
     public ResponseEntity<ProductSuccessResponse> patchProduct(@PathVariable("id") UUID id, @Valid @RequestBody ProductPatchRequest request) {
         return ResponseEntity.ok(productService.patchProduct(id, request));
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ProductSuccessResponse> deleteProduct(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(productService.deleteProduct(id));

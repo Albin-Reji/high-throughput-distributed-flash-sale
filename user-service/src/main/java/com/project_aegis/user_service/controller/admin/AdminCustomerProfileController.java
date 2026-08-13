@@ -6,10 +6,8 @@ import com.project_aegis.user_service.dto.response.ApiResponse;
 import com.project_aegis.user_service.dto.response.PageResponse;
 import com.project_aegis.user_service.dto.response.ProfileResponse;
 import com.project_aegis.user_service.dto.response.StatusResponse;
-import com.project_aegis.user_service.entity.CustomerProfile;
 import com.project_aegis.user_service.service.CustomerProfileService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -28,17 +26,15 @@ public class AdminCustomerProfileController {
     @GetMapping
     public ResponseEntity<PageResponse<CustomerProfileResponse>> getAllCustomers(
             @PageableDefault(
-                    page = 0,
-                    size = 10,
                     direction = Sort.Direction.ASC
-            )Pageable pageable
-            ){
-        return ResponseEntity.ok(customerProfileService.getAllCustomers( pageable));
+            ) Pageable pageable
+    ) {
+        return ResponseEntity.ok(customerProfileService.getAllCustomers(pageable));
     }
 
     @GetMapping("/{customerId}")
     public ResponseEntity<ApiResponse<ProfileResponse>> getCustomerById(@PathVariable(name = "customerId")
-                                                                        UUID customerId){
+                                                                        UUID customerId) {
         return ResponseEntity.ok(customerProfileService.getCustomerByCustomerId(customerId));
     }
 
@@ -46,14 +42,15 @@ public class AdminCustomerProfileController {
     public ResponseEntity<ApiResponse<StatusResponse>> updateCustomerStatus(
             @PathVariable(name = "customerId") UUID customerId,
             @RequestBody StatusRequest request
-            ){
+    ) {
 
         return ResponseEntity.ok(customerProfileService.updateCustomerStatus(customerId, request));
     }
+
     @DeleteMapping("/{customerId}")
     public ResponseEntity<ApiResponse<Void>> deleteCustomerByAdmin(
             @PathVariable(name = "customerId") UUID customerId
-    ){
+    ) {
 
         return ResponseEntity.ok(customerProfileService.deleteCustomerByAdmin(customerId));
     }

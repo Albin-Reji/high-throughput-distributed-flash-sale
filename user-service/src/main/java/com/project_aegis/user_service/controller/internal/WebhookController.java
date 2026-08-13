@@ -39,7 +39,7 @@ public class WebhookController {
         log.debug("Configured API key: [{}], Received API key: [{}]", configuredKey, apiKey);
 
         if (configuredKey == null || !configuredKey.equals(apiKey)) {
-            log.warn("Webhook call rejected — invalid API key. Configured key is {}", 
+            log.warn("Webhook call rejected — invalid API key. Configured key is {}",
                     configuredKey == null ? "NULL" : "present but mismatched");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.<Void>builder()

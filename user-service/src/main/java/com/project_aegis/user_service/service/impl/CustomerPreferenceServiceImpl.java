@@ -19,6 +19,8 @@ public class CustomerPreferenceServiceImpl implements CustomerPreferenceService 
 
     private final CustomerProfileRepository customerProfileRepository;
 
+    private static final String CUSTOMER_PROFILE_NOT_FOUND="Customer profile not found ";
+
     /**
      * <p>Get customer preferences</p>
      */
@@ -26,7 +28,7 @@ public class CustomerPreferenceServiceImpl implements CustomerPreferenceService 
     @Transactional(readOnly = true)
     public CustomerPreferenceResponse getPreferences(String keycloakUserId) {
         CustomerProfile profile = customerProfileRepository.findByKeycloakUserId(keycloakUserId)
-                .orElseThrow(() -> new CustomerNotFoundException("Customer profile not found "));
+                .orElseThrow(() -> new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
 
         CustomerPreference preference = profile.getPreference();
         if (preference == null) {
@@ -49,7 +51,7 @@ public class CustomerPreferenceServiceImpl implements CustomerPreferenceService 
     public CustomerPreferenceResponse replacePreferences(String keycloakUserId,
                                                           CustomerPreferenceRequest request) {
         CustomerProfile profile = customerProfileRepository.findByKeycloakUserId(keycloakUserId)
-                .orElseThrow(() -> new CustomerNotFoundException("Customer profile not found "));
+                .orElseThrow(() -> new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
 
         CustomerPreference preference = profile.getPreference();
         if (preference == null) {
@@ -60,10 +62,8 @@ public class CustomerPreferenceServiceImpl implements CustomerPreferenceService 
         }
 
         // Full replace — set all fields
-        preference.setMarketingEmailsEnabled(
-                request.getMarketingEmailsEnabled() != null ? request.getMarketingEmailsEnabled() : false);
-        preference.setSmsNotificationsEnabled(
-                request.getSmsNotificationsEnabled() != null ? request.getSmsNotificationsEnabled() : false);
+        preference.setMarketingEmailsEnabled(request.getMarketingEmailsEnabled()!=null?request.getMarketingEmailsEnabled(): preference.isMarketingEmailsEnabled());
+        preference.setSmsNotificationsEnabled(request.getSmsNotificationsEnabled()!=null?request.getSmsNotificationsEnabled(): preference.isSmsNotificationsEnabled());
         preference.setPreferredCurrency(
                 request.getPreferredCurrency() != null ? request.getPreferredCurrency() : "INR");
 
@@ -81,7 +81,7 @@ public class CustomerPreferenceServiceImpl implements CustomerPreferenceService 
     public CustomerPreferenceResponse updatePreferences(String keycloakUserId,
                                                          CustomerPreferenceRequest request) {
         CustomerProfile profile = customerProfileRepository.findByKeycloakUserId(keycloakUserId)
-                .orElseThrow(() -> new CustomerNotFoundException("Customer profile not found "));
+                .orElseThrow(() -> new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
 
         CustomerPreference preference = profile.getPreference();
         if (preference == null) {
