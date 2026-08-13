@@ -13,6 +13,14 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+#keycloak configuaration
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
 # actuator configuration
 management:
   endpoints:
