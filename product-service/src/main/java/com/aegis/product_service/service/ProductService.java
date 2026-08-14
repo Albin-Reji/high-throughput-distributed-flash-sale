@@ -37,12 +37,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductService {
 
+    private static final String CATEGORY_NOT_FOUND = "Category not found with id: ";
+    private static final String PRODUCT_NOT_FOUND_WITH_ID = "Product not found with id: ";
+
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final SkuRepository skuRepository;
     private final ProductAttributeRepository productAttributeRepository;
     private final ProductMapper productMapper;
-
 
     /**
      * <p>Creates a new product.</p>
@@ -54,19 +56,30 @@ public class ProductService {
     public ProductSuccessResponse createProduct(@Valid ProductRequest request) {
         // check if category already exist
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFound("Category not found with id: " + request.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND + request.getCategoryId()));
         // check for skucode is already exist
-        request.getSkus().forEach(skuRequest -> {
-            if (skuRepository.existsBySkuCode(skuRequest.getSkuCode())) {
-                throw new ResourceAlreadyExists("SKU code already exists: " + skuRequest.getSkuCode());
-            }
-        });
+        request.getSkus()
+                .forEach(skuRequest -> {
+                    if (skuRepository.existsBySkuCode(skuRequest.getSkuCode())) {
+                        throw new ResourceAlreadyExists("SKU code already exists: " + skuRequest.getSkuCode());
+                    }
+                });
 
-        Product product = Product.builder().category(category).title(request.getTitle()).description(request.getDescription()).build();
+        Product product = Product.builder()
+                .category(category)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .build();
 
-        List<ProductAttribute> productAttributes = request.getProductAttributes().stream().map(prodAttr -> productMapper.toEntity(prodAttr, product)).collect(Collectors.toCollection(ArrayList::new));
+        List<ProductAttribute> productAttributes = request.getProductAttributes()
+                .stream()
+                .map(prodAttr -> productMapper.toEntity(prodAttr, product))
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        List<Sku> skus = request.getSkus().stream().map(skuRequest -> productMapper.toEntity(skuRequest, product)).collect(Collectors.toCollection(ArrayList::new));
+        List<Sku> skus = request.getSkus()
+                .stream()
+                .map(skuRequest -> productMapper.toEntity(skuRequest, product))
+                .collect(Collectors.toCollection(ArrayList::new));
 
         product.setProductAttributes(productAttributes);
         product.setSkus(skus);
@@ -85,10 +98,10 @@ public class ProductService {
     @Transactional
     public ProductSuccessResponse updateProduct(UUID id, @Valid ProductUpdateRequest request) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFound("Product not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFound(PRODUCT_NOT_FOUND_WITH_ID + id));
 
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFound("Category not found with id: " + request.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND + request.getCategoryId()));
 
         product.setCategory(category);
         product.setTitle(request.getTitle());
@@ -103,6 +116,7 @@ public class ProductService {
 
     /**
      * <p>Retrieves all products with pagination.</p>
+     *
      * @param page
      * @param size
      * @return {@link PageResponse} containing {@link ProductResponse}
@@ -127,18 +141,20 @@ public class ProductService {
 
     /**
      * <p>Retrieves a product by its ID.</p>
+     *
      * @param id
      * @return {@link ProductResponse}
      */
     public ProductResponse getProductById(UUID id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFound("Product not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFound(PRODUCT_NOT_FOUND_WITH_ID + id));
 
         return productMapper.toResponse(product);
     }
 
     /**
      * <p>Patches a product by its ID.</p>
+     *
      * @param id
      * @param request
      * @return {@link ProductSuccessResponse}
@@ -146,10 +162,10 @@ public class ProductService {
     @Transactional
     public ProductSuccessResponse patchProduct(UUID id, @Valid ProductPatchRequest request) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFound("Product not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFound(PRODUCT_NOT_FOUND_WITH_ID + id));
 
         Category requestCategory = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFound("Category not found with id: " + request.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND + request.getCategoryId()));
 
         product.setTitle(request.getTitle() != null ? request.getTitle() : product.getTitle());
         product.setDescription(request.getDescription() != null ? request.getDescription() : product.getDescription());
@@ -164,13 +180,14 @@ public class ProductService {
 
     /**
      * <p>Deletes a product by its ID.</p>
+     *
      * @param id
      * @return {@link ProductSuccessResponse}
      */
     @Transactional
     public ProductSuccessResponse deleteProduct(UUID id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFound("Product not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFound(PRODUCT_NOT_FOUND_WITH_ID + id));
 
         productRepository.delete(product);
 
@@ -183,6 +200,7 @@ public class ProductService {
 
     /**
      * <p>Retrieves a page of all products.</p>
+     *
      * @param pageable
      * @return {@link PageResponse} containing {@link ProductResponse}
      */
@@ -203,6 +221,7 @@ public class ProductService {
 
     /**
      * <p>Searches for products by title.</p>
+     *
      * @param pageable
      * @param query
      * @return {@link PageResponse} containing {@link ProductResponse}
@@ -225,6 +244,7 @@ public class ProductService {
 
     /**
      * <p>Retrieves a page of products by category ID.</p>
+     *
      * @param pageable
      * @param categoryId
      * @return {@link PageResponse} containing {@link ProductSummaryResponse}
@@ -232,7 +252,7 @@ public class ProductService {
 
     public PageResponse<ProductSummaryResponse> getProductsByCategory(Pageable pageable, UUID categoryId) {
         categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFound("Category not found with id: " + categoryId));
+                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND + categoryId));
         Page<Product> productPage = productRepository.findByCategoryId(pageable, categoryId);
 
         return PageResponse.<ProductSummaryResponse>builder()
@@ -250,27 +270,28 @@ public class ProductService {
 
     /**
      * <p>Retrieves a page of SKUs by product ID.</p>
+     *
      * @param pageable
      * @param productId
      * @return {@link  SkuResponse}
      */
     public PageResponse<SkuResponse> getAllSkusByProductId(Pageable pageable, UUID productId) {
         productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFound("Product not found with id: " + productId));
+                .orElseThrow(() -> new ResourceNotFound(PRODUCT_NOT_FOUND_WITH_ID + productId));
 
         Page<Sku> skuPage = skuRepository.findByProductId(pageable, productId);
 
         return PageResponse.<SkuResponse>builder()
                 .content(skuPage.getContent()
                         .stream()
-                       .map(sku -> SkuResponse.builder()
+                        .map(sku -> SkuResponse.builder()
                                 .id(sku.getId())
                                 .skuCode(sku.getSkuCode())
                                 .color(sku.getColor())
                                 .size(sku.getSize())
                                 .price(sku.getPrice())
                                 .build())
-                .collect(Collectors.toCollection(ArrayList::new)))
+                        .collect(Collectors.toCollection(ArrayList::new)))
                 .first(skuPage.isFirst())
                 .last(skuPage.isLast())
                 .size(skuPage.getSize())
@@ -279,18 +300,18 @@ public class ProductService {
                 .build();
 
 
-
     }
 
     /**
      * <p>Retrieves a page of product attributes by product ID.</p>
+     *
      * @param pageable
      * @param productId
      * @return {@link PageResponse<ProductAttributeResponse>}
      */
     public PageResponse<ProductAttributeResponse> getProductAttributesByProductId(Pageable pageable, UUID productId) {
         productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFound("Product not found with id: " + productId));
+                .orElseThrow(() -> new ResourceNotFound(PRODUCT_NOT_FOUND_WITH_ID + productId));
 
         Page<ProductAttribute> productAttributePage = productAttributeRepository.findByProductId(pageable, productId);
 

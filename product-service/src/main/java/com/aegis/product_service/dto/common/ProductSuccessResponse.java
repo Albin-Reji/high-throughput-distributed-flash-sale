@@ -1,7 +1,5 @@
 package com.aegis.product_service.dto.common;
 
-import org.springframework.stereotype.Component;
-
 import java.util.UUID;
 
 

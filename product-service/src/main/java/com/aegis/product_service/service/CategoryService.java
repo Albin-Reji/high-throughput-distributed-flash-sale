@@ -29,6 +29,8 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
 
+    private static  final  String PARENT_CATEGORY_NOT_FOUND= "Parent category not found with id: ";
+    private static  final String CATEGORY_NOT_FOUND ="Category not found with id: ";
     //    create new category
 
     public CategoryResponse createCategory(CategoryRequest request) {
@@ -38,7 +40,7 @@ public class CategoryService {
         if (request.getParentCategoryId() != null) {
             parentCategory = categoryRepository.findById(request.getParentCategoryId())
                     .orElseThrow(
-                            () -> new ResourceNotFound("Parent category not found with id: "
+                            () -> new ResourceNotFound(PARENT_CATEGORY_NOT_FOUND
                                     + request.getParentCategoryId()));
         }
         if (categoryRepository.existsByName(request.getName())) {
@@ -107,23 +109,23 @@ public class CategoryService {
 
     }
 
-    //    get category by Id
+    //    get category by id
     public CategoryResponse getCategoryById(UUID id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFound("Category not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND+ id));
         return categoryMapper.toResponse(category);
     }
 
     public CategoryResponse updateCategory(UUID id, @Valid CategoryRequest request) {
         if (categoryRepository.existsById(id)) {
             Category category = categoryRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFound("Category not found with id: " + id));
+                    .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND+ id));
             category.setName(request.getName() != null ? request.getName() : category.getName());
 
 
             if (request.getParentCategoryId() != null) {
                 Category finalParentCategory = categoryRepository.findById(request.getParentCategoryId())
-                        .orElseThrow(() -> new ResourceNotFound("Parent category not found with id: " + request.getParentCategoryId()));
+                        .orElseThrow(() -> new ResourceNotFound(PARENT_CATEGORY_NOT_FOUND + request.getParentCategoryId()));
 
                 category.setParentCategory(finalParentCategory);
             }
@@ -131,16 +133,16 @@ public class CategoryService {
             return categoryMapper.toResponse(category);
         }
 
-        throw new ResourceNotFound("Category not found with id: " + id);
+        throw new ResourceNotFound(CATEGORY_NOT_FOUND+ id);
 
 
     }
 
-    //delete the category based on Id
+    //delete the category based on id
     public void deleteCategory(UUID id) {
 
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFound("Category not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND+ id));
 
         categoryRepository.delete(category);
     }
@@ -148,9 +150,9 @@ public class CategoryService {
     //update the category
     public CategoryResponse putCategory(UUID id, @Valid CategoryRequest request) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFound("Category not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND+ id));
         Category parentCategory = categoryRepository.findById(request.getParentCategoryId())
-                .orElseThrow(() -> new ResourceNotFound("Parent category not found with id: " + request.getParentCategoryId()));
+                .orElseThrow(() -> new ResourceNotFound(PARENT_CATEGORY_NOT_FOUND + request.getParentCategoryId()));
 
         category.setName(request.getName() != null ? request.getName() : category.getName());
         category.setParentCategory(parentCategory);

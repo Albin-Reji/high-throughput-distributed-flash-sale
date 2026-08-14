@@ -3,6 +3,7 @@ package com.project_aegis.user_service.dto.webhook;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
 /**
  * Payload sent by the Keycloak Event Listener SPI when a user registers.
@@ -11,6 +12,7 @@ import jakarta.validation.constraints.Size;
  * that Keycloak provides at registration time. Additional profile data
  * (phone, address, preferences) is populated later by the user.</p>
  */
+@Builder
 public record KeycloakUserRegisteredEvent(
 
         @NotBlank(message = "keycloakUserId is required")
