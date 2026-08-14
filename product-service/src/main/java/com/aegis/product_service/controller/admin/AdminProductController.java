@@ -1,10 +1,11 @@
 package com.aegis.product_service.controller.admin;
 
 import com.aegis.product_service.dto.common.PageResponse;
+import com.aegis.product_service.dto.common.ProductAttributeSuccessResponse;
 import com.aegis.product_service.dto.common.ProductSuccessResponse;
-import com.aegis.product_service.dto.request.ProductPatchRequest;
-import com.aegis.product_service.dto.request.ProductRequest;
-import com.aegis.product_service.dto.request.ProductUpdateRequest;
+import com.aegis.product_service.dto.common.SkuSuccessResponse;
+import com.aegis.product_service.dto.request.*;
+import com.aegis.product_service.dto.response.ProductAttributeResponse;
 import com.aegis.product_service.dto.response.ProductResponse;
 import com.aegis.product_service.service.ProductService;
 import jakarta.validation.Valid;
@@ -51,5 +52,35 @@ public class AdminProductController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ProductSuccessResponse> deleteProduct(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(productService.deleteProduct(id));
+    }
+
+    @PostMapping("/{productId}/skus")
+    public ResponseEntity<SkuSuccessResponse> createSku(@PathVariable("productId") UUID productId, @Valid @RequestBody SkuRequest request) {
+        return ResponseEntity.ok(productService.createSku(productId, request));
+    }
+
+    @PutMapping("/{productId}/skus/{skuId}")
+    public ResponseEntity<SkuSuccessResponse> updateSku(@PathVariable("productId") UUID productId, @PathVariable("skuId") UUID skuId, @Valid @RequestBody SkuUpdateRequest request) {
+        return ResponseEntity.ok(productService.updateSku(productId, skuId, request));
+    }
+
+    @DeleteMapping("{productId}/skus/{skuId}")
+    public ResponseEntity<SkuSuccessResponse> deleteSkuBySkuId(
+            @PathVariable("productId") UUID productId, @PathVariable("skuId") UUID skuId
+    ) {
+        return ResponseEntity.ok(productService.deleteSkuBySkuId(productId, skuId));
+    }
+
+    @PostMapping("/{productId}/attributes")
+    public ResponseEntity<ProductAttributeSuccessResponse> createProductAttribute(@PathVariable("productId") UUID productId, @Valid @RequestBody ProductAttributeRequest request) {
+        return ResponseEntity.ok(productService.createProductAttribute(productId, request));
+    }
+    @PatchMapping("/{productId}/attributes/{attributeName}")
+    public ResponseEntity<ProductAttributeSuccessResponse> updateProductAttribute(@PathVariable("productId") UUID productId, @PathVariable("attributeName") String attributeName,  @Valid @RequestBody ProductAttributeUpdateRequest request) {
+        return ResponseEntity.ok(productService.updateProductAttribute(productId, attributeName, request));
+    }
+    @DeleteMapping("/{productId}/attributes/{attributeName}")
+    public ResponseEntity<ProductAttributeSuccessResponse> deleteProductAttribute(@PathVariable("productId") UUID productId, @PathVariable("attributeName") String attributeName) {
+        return ResponseEntity.ok(productService.deleteProductAttribute(productId, attributeName));
     }
 }

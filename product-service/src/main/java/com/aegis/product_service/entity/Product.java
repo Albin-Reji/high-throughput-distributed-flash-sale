@@ -37,4 +37,9 @@ public class Product {
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductAttribute> productAttributes = new ArrayList<>();
+
+    public void addSku(Sku sku) {
+        skus.add(sku);
+        sku.setProduct(this);
+    }
 }

@@ -1,10 +1,10 @@
 package com.aegis.product_service.service;
 
 import com.aegis.product_service.dto.common.PageResponse;
+import com.aegis.product_service.dto.common.ProductAttributeSuccessResponse;
 import com.aegis.product_service.dto.common.ProductSuccessResponse;
-import com.aegis.product_service.dto.request.ProductPatchRequest;
-import com.aegis.product_service.dto.request.ProductRequest;
-import com.aegis.product_service.dto.request.ProductUpdateRequest;
+import com.aegis.product_service.dto.common.SkuSuccessResponse;
+import com.aegis.product_service.dto.request.*;
 import com.aegis.product_service.dto.response.ProductAttributeResponse;
 import com.aegis.product_service.dto.response.ProductResponse;
 import com.aegis.product_service.dto.response.ProductSummaryResponse;
@@ -37,8 +37,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductService {
 
-    private static final String CATEGORY_NOT_FOUND = "Category not found with id: ";
-    private static final String PRODUCT_NOT_FOUND_WITH_ID = "Product not found with id: ";
+    public static final String CATEGORY_NOT_FOUND_WITH_ID = "Category not found with id: ";
+    public static final String SKU_NOT_FOUND_WITH_ID = "Sku not found with id: ";
+    public static final String PRODUCT_NOT_FOUND_WITH_ID = "Product not found with id: ";
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
@@ -49,14 +50,15 @@ public class ProductService {
     /**
      * <p>Creates a new product.</p>
      *
-     * @param request
-     * @return {@link ProductSuccessResponse}
+     * @param request ProductRequest containing the product data to create. Must include title, description,
+     *                categoryId, list of productAttributes and list of skus. The skus skuCode values must be unique.
+     * @return {@link ProductSuccessResponse} with the created product id, title and a success message
      */
     @Transactional
     public ProductSuccessResponse createProduct(@Valid ProductRequest request) {
         // check if category already exist
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND + request.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND_WITH_ID + request.getCategoryId()));
         // check for skucode is already exist
         request.getSkus()
                 .forEach(skuRequest -> {
@@ -91,9 +93,9 @@ public class ProductService {
     /**
      * <p>Updates a product by its ID.</p>
      *
-     * @param id
-     * @param request
-     * @return {@link ProductSuccessResponse}
+     * @param id      UUID of the product to update
+     * @param request ProductUpdateRequest containing new values for title, description and categoryId
+     * @return {@link ProductSuccessResponse} with the product id, title and a success message
      */
     @Transactional
     public ProductSuccessResponse updateProduct(UUID id, @Valid ProductUpdateRequest request) {
@@ -101,7 +103,7 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFound(PRODUCT_NOT_FOUND_WITH_ID + id));
 
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND + request.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND_WITH_ID + request.getCategoryId()));
 
         product.setCategory(category);
         product.setTitle(request.getTitle());
@@ -154,10 +156,11 @@ public class ProductService {
 
     /**
      * <p>Patches a product by its ID.</p>
+     * <p>Only non-null fields in {@code request} will be applied to the existing product.</p>
      *
-     * @param id
-     * @param request
-     * @return {@link ProductSuccessResponse}
+     * @param id      UUID of the product to patch
+     * @param request ProductPatchRequest containing fields to update (nullable fields will be ignored)
+     * @return {@link ProductSuccessResponse} with the product id, title and a success message
      */
     @Transactional
     public ProductSuccessResponse patchProduct(UUID id, @Valid ProductPatchRequest request) {
@@ -165,7 +168,7 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFound(PRODUCT_NOT_FOUND_WITH_ID + id));
 
         Category requestCategory = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND + request.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND_WITH_ID + request.getCategoryId()));
 
         product.setTitle(request.getTitle() != null ? request.getTitle() : product.getTitle());
         product.setDescription(request.getDescription() != null ? request.getDescription() : product.getDescription());
@@ -181,8 +184,8 @@ public class ProductService {
     /**
      * <p>Deletes a product by its ID.</p>
      *
-     * @param id
-     * @return {@link ProductSuccessResponse}
+     * @param id UUID of the product to delete
+     * @return {@link ProductSuccessResponse} containing the deleted product id, title and a success message
      */
     @Transactional
     public ProductSuccessResponse deleteProduct(UUID id) {
@@ -201,8 +204,8 @@ public class ProductService {
     /**
      * <p>Retrieves a page of all products.</p>
      *
-     * @param pageable
-     * @return {@link PageResponse} containing {@link ProductResponse}
+     * @param pageable Pageable instance (contains page number, size and sort information)
+     * @return {@link PageResponse} containing {@link ProductResponse} for the provided pageable
      */
     public PageResponse<ProductResponse> getAllProductsByPage(Pageable pageable) {
         Page<ProductResponse> productPage = productRepository.findAll(pageable)
@@ -252,7 +255,7 @@ public class ProductService {
 
     public PageResponse<ProductSummaryResponse> getProductsByCategory(Pageable pageable, UUID categoryId) {
         categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND + categoryId));
+                .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND_WITH_ID + categoryId));
         Page<Product> productPage = productRepository.findByCategoryId(pageable, categoryId);
 
         return PageResponse.<ProductSummaryResponse>builder()
@@ -305,9 +308,9 @@ public class ProductService {
     /**
      * <p>Retrieves a page of product attributes by product ID.</p>
      *
-     * @param pageable
-     * @param productId
-     * @return {@link PageResponse<ProductAttributeResponse>}
+     * @param pageable  Pageable instance for paging and sorting
+     * @param productId UUID of the product whose attributes should be returned
+     * @return {@link PageResponse<ProductAttributeResponse>} containing attribute name/value pairs
      */
     public PageResponse<ProductAttributeResponse> getProductAttributesByProductId(Pageable pageable, UUID productId) {
         productRepository.findById(productId)
@@ -328,6 +331,149 @@ public class ProductService {
                 .size(productAttributePage.getSize())
                 .totalPages(productAttributePage.getTotalPages())
                 .totalElements(productAttributePage.getTotalElements())
+                .build();
+    }
+
+    /**
+     * <p>Creates a new SKU for the specified product.</p>
+     *
+     * @param productId UUID of the product to which the SKU will be added
+     * @param request   SkuRequest containing skuCode, color, size and price for the new SKU
+     * @return {@link SkuSuccessResponse} with the created SKU id, skuCode and a success message
+     */
+    @Transactional
+    public SkuSuccessResponse createSku(UUID productId, SkuRequest request) {
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFound(PRODUCT_NOT_FOUND_WITH_ID + productId));
+
+        if (skuRepository.existsBySkuCode(request.getSkuCode())) {
+            throw new ResourceAlreadyExists("SKU code already exists: " + request.getSkuCode());
+        }
+
+        Sku sku = Sku.builder()
+                .skuCode(request.getSkuCode())
+                .color(request.getColor())
+                .size(request.getSize())
+                .price(request.getPrice())
+                .product(product)
+                .build();
+
+        product.getSkus().add(sku);
+
+        skuRepository.save(sku);
+        return SkuSuccessResponse.builder()
+                .id(sku.getId())
+                .skuCode(sku.getSkuCode())
+                .message("SKU created successfully")
+                .build();
+    }
+
+    /**
+     * <p>Updates an existing SKU for the specified product.</p>
+     *
+     * @param productId the ID of the product containing the SKU
+     * @param id        the ID of the SKU to update
+     * @param request   the SKU update request details
+     * @return {@link SkuSuccessResponse} containing the updated SKU information
+     */
+    @Transactional
+    public SkuSuccessResponse updateSku(UUID productId, UUID id, @Valid SkuUpdateRequest request) {
+
+        productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFound(PRODUCT_NOT_FOUND_WITH_ID + productId));
+
+        Sku sku = skuRepository.findByIdAndProductId(id, productId)
+                .orElseThrow(() -> new ResourceNotFound(SKU_NOT_FOUND_WITH_ID + id));
+
+        sku.setColor(request.getColor() != null ? request.getColor() : sku.getColor());
+        sku.setSize(request.getSize() != null ? request.getSize() : sku.getSize());
+        sku.setPrice(request.getPrice() != null ? request.getPrice() : sku.getPrice());
+
+        skuRepository.save(sku);
+        return SkuSuccessResponse.builder()
+                .id(sku.getId())
+                .skuCode(sku.getSkuCode())
+                .message("SKU updated successfully")
+                .build();
+
+
+    }
+
+    /**
+     *
+     * @param productId the ID of the product containing the SKU
+     * @param skuId     skuId
+     * @return {@link  SkuSuccessResponse}
+     */
+    @Transactional
+    public SkuSuccessResponse deleteSkuBySkuId(UUID productId, UUID skuId) {
+        productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFound(PRODUCT_NOT_FOUND_WITH_ID + productId));
+        Sku sku = skuRepository.findById(skuId)
+                .orElseThrow(() -> new ResourceNotFound(SKU_NOT_FOUND_WITH_ID + skuId));
+
+        skuRepository.delete(sku);
+
+        return SkuSuccessResponse.builder()
+                .id(sku.getId())
+                .skuCode(sku.getSkuCode())
+                .message("SKU deleted successfully")
+                .build();
+    }
+
+    public ProductAttributeSuccessResponse createProductAttribute(UUID productId, @Valid ProductAttributeRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFound(PRODUCT_NOT_FOUND_WITH_ID + productId));
+
+        productAttributeRepository.findByProductIdAndAttributeName(productId, request.getName())
+                .ifPresent(attr -> {
+                    throw new ResourceAlreadyExists("Product attribute already exists with name: " + request.getName());
+                });
+
+        ProductAttribute productAttribute = ProductAttribute.builder()
+                .attributeName(request.getName())
+                .attributeValue(request.getValue())
+                .product(product)
+                .build();
+
+        productAttributeRepository.save(productAttribute);
+        return ProductAttributeSuccessResponse.builder()
+                .name(productAttribute.getAttributeName())
+                .value(productAttribute.getAttributeValue())
+                .message("Product attribute created successfully")
+                .build();
+    }
+
+    @Transactional
+    public ProductAttributeSuccessResponse updateProductAttribute(UUID productId, String attributeName, ProductAttributeUpdateRequest request) {
+
+        ProductAttribute productAttribute = productAttributeRepository.findByProductIdAndAttributeName(productId, attributeName)
+                .orElseThrow(() -> new ResourceNotFound("Product attribute not found with name: " + attributeName));
+
+        productAttribute.setAttributeValue(request.getValue() != null ? request.getValue() : productAttribute.getAttributeValue());
+
+        return ProductAttributeSuccessResponse.builder()
+                .name(productAttribute.getAttributeName())
+                .value(productAttribute.getAttributeValue())
+                .message("Product attribute updated successfully")
+                .build();
+
+
+    }
+
+    @Transactional
+    public ProductAttributeSuccessResponse deleteProductAttribute(UUID productId, String attributeName) {
+
+        ProductAttribute productAttribute= productAttributeRepository.findByProductIdAndAttributeName(productId, attributeName)
+                .orElseThrow(() -> new ResourceNotFound("Product attribute not found with name: " + attributeName + "  productId: "+ productId));
+
+        productAttributeRepository.delete(productAttribute);
+
+        return ProductAttributeSuccessResponse.builder()
+                .name(productAttribute.getAttributeName())
+                .value(productAttribute.getAttributeValue())
+                .message("Product attribute deleted successfully")
                 .build();
     }
 }

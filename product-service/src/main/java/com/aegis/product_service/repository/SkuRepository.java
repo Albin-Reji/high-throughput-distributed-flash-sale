@@ -7,13 +7,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface SkuRepository extends JpaRepository<Sku, Long> {
+public interface SkuRepository extends JpaRepository<Sku, UUID> {
 
 
     boolean existsBySkuCode(@NotBlank(message = "SKU code required") String skuCode);
 
     Page<Sku> findByProductId(Pageable pageable, UUID productId);
+
+    Optional<Sku> findByIdAndProductId(UUID id, UUID productId);
+
 }
