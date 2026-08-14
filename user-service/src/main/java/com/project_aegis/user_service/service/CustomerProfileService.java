@@ -8,41 +8,192 @@ import com.project_aegis.user_service.dto.response.PageResponse;
 import com.project_aegis.user_service.dto.response.ProfileResponse;
 import com.project_aegis.user_service.dto.response.StatusResponse;
 import com.project_aegis.user_service.dto.webhook.KeycloakUserRegisteredEvent;
+import com.project_aegis.user_service.entity.AccountStatus;
+import com.project_aegis.user_service.entity.CustomerPreference;
 import com.project_aegis.user_service.entity.CustomerProfile;
-import jakarta.validation.Valid;
+import com.project_aegis.user_service.exception.CustomerNotFoundException;
+import com.project_aegis.user_service.mapper.CustomerProfileMapper;
+import com.project_aegis.user_service.repository.CustomerProfileRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-/**
- * Service layer for managing customer profiles.
- */
-public interface CustomerProfileService {
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class CustomerProfileService {
+
+    private final CustomerProfileRepository customerProfileRepository;
+    private final CustomerProfileMapper customerProfileMapper;
+
+    private static final String CUSTOMER_PROFILE_NOT_FOUND="Customer profile not found ";
 
     /**
-     * Creates a {@link CustomerProfile} from a Keycloak registration event.
-     *
-     * <p>This method is <b>idempotent</b>: if a profile with the same
-     * {@code keycloakUserId} already exists, it returns the existing
-     * profile without modification.</p>
-     *
-     * @param event the registration event payload
-     * @return the created or existing customer profile
+     * Creates a new {@link CustomerProfile} from a Keycloak registration event,
+     * or returns the existing one if a profile with the same keycloakUserId
+     * already exists (idempotent).
      */
-    CustomerProfile createProfileFromKeycloakEvent(KeycloakUserRegisteredEvent event);
+    @Transactional
+    public CustomerProfile createProfileFromKeycloakEvent(KeycloakUserRegisteredEvent event) {
+
+        // Idempotency check — if the profile already exists, return it
+        Optional<CustomerProfile> existing =
+                customerProfileRepository.findByKeycloakUserId(event.keycloakUserId());
+
+        if (existing.isPresent()) {
+            log.info("CustomerProfile already exists for keycloakUserId={}, skipping creation",
+                    event.keycloakUserId());
+            return existing.get();
+        }
+
+        // Build the new profile
+        CustomerProfile profile = CustomerProfile.builder()
+                .keycloakUserId(event.keycloakUserId())
+                .email(event.email())
+                .firstName(event.firstName())
+                .lastName(event.lastName())
+                .accountStatus(AccountStatus.ACTIVE)
+                .build();
+
+        // Build default preferences and link them
+        CustomerPreference preference = CustomerPreference.builder()
+                .customer(profile)
+                .marketingEmailsEnabled(false)
+                .smsNotificationsEnabled(false)
+                .preferredCurrency("INR")
+                .build();
+
+        profile.setPreference(preference);
+
+        CustomerProfile saved = customerProfileRepository.save(profile);
+
+        log.info("CustomerProfile created: id={}, keycloakUserId={}, email={}",
+                saved.getId(), saved.getKeycloakUserId(), saved.getEmail());
+
+        return saved;
+    }
+
+    public ApiResponse<CustomerProfileResponse> getCurrentCustomer(String keycloakUserId) {
+        // checking is user customer is present
+        CustomerProfile customerProfile =customerProfileRepository.findByKeycloakUserId(keycloakUserId)
+                .orElseThrow(() -> new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
+
+        return ApiResponse.<CustomerProfileResponse>builder()
+                .success(true)
+                .message("Customer profile retrieved successfully")
+                .data(customerProfileMapper.toResponse(customerProfile))
+                .build();
 
 
-    ApiResponse<CustomerProfileResponse> getCurrentCustomer(String keycloakUserId);
+    }
 
-    ApiResponse<CustomerProfileResponse> modifyCurrentUser(String keycloakUserId, @Valid CustomerUpdateRequest customerUpdateRequest);
+    /**
+     * <p>Partial Update</p>
+     * @param keycloakUserId unique userId
+     * @param customerUpdateRequest customerUpdateRequest structure
+     * @return {@link ApiResponse} containing  {@link CustomerProfileResponse}
+     */
 
-    ApiResponse<CustomerProfileResponse> updateCurrentUser(String keycloakUserId, CustomerUpdateRequest customerUpdateRequest);
+    @Transactional
+    public ApiResponse<CustomerProfileResponse> modifyCurrentUser(String keycloakUserId,
+                                                                  CustomerUpdateRequest customerUpdateRequest) {
 
-    PageResponse<CustomerProfileResponse> getAllCustomers(Pageable pageable);
+        CustomerProfile customerProfile =customerProfileRepository.findByKeycloakUserId(keycloakUserId)
+                .orElseThrow(()->new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
 
-    ApiResponse<ProfileResponse> getCustomerByCustomerId(UUID customerId);
+        customerProfileMapper.replaceEntity(customerUpdateRequest, customerProfile);
 
-    ApiResponse<StatusResponse> updateCustomerStatus(UUID customerId, StatusRequest request);
+        customerProfileRepository.save(customerProfile);
+        return ApiResponse.<CustomerProfileResponse>builder()
+                .success(true)
+                .message("Customer profile updated successfully")
+                .data(customerProfileMapper.toResponse(customerProfile))
+                .build();
 
-    ApiResponse<Void> deleteCustomerByAdmin(UUID customerId);
+    }
+
+    @Transactional
+    public ApiResponse<CustomerProfileResponse> updateCurrentUser(String keycloakUserId,
+                                                                  CustomerUpdateRequest customerUpdateRequest) {
+        CustomerProfile customerProfile =customerProfileRepository.findByKeycloakUserId(keycloakUserId)
+                .orElseThrow(()->new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
+
+        customerProfileMapper.updateEntity(customerUpdateRequest, customerProfile);
+        customerProfileRepository.save(customerProfile);
+        return ApiResponse.<CustomerProfileResponse>builder()
+                .success(true)
+                .message("Customer profile updated successfully")
+                .data(customerProfileMapper.toResponse(customerProfile))
+                .build();
+    }
+
+    public PageResponse<CustomerProfileResponse> getAllCustomers(Pageable pageable) {
+        Page<CustomerProfile> profiles=customerProfileRepository.findAll(pageable);
+
+        return PageResponse.<CustomerProfileResponse>builder()
+                .content(profiles.stream()
+                        .map(customerProfileMapper::toResponse)
+                        .collect(Collectors.toCollection(ArrayList::new))
+                )
+                .first(profiles.isFirst())
+                .last(profiles.isLast())
+                .page(pageable.getPageNumber())
+                .size(profiles.getSize())
+                .totalElements(profiles.getTotalElements())
+                .totalPages(profiles.getTotalPages())
+                .build();
+    }
+
+    public ApiResponse<ProfileResponse> getCustomerByCustomerId(UUID customerId) {
+        CustomerProfile profile =customerProfileRepository.findById(customerId)
+                .orElseThrow(()-> new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
+
+        return ApiResponse.<ProfileResponse>builder()
+                .success(true)
+                .message("Customer profile retrieved successfully")
+                .data(customerProfileMapper.toProfileResponse(profile))
+                .build();
+
+    }
+
+    @Transactional
+    public ApiResponse<StatusResponse> updateCustomerStatus(UUID customerId, StatusRequest request) {
+        CustomerProfile profile=customerProfileRepository.findById(customerId)
+                .orElseThrow(()->new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
+
+        profile.setAccountStatus(request.getAccountStatus());
+
+
+        CustomerProfile savedProfile=customerProfileRepository.save(profile);
+
+        return ApiResponse.<StatusResponse>builder()
+                .message("Customer profile status  updated successfully")
+                .success(true)
+                .data(StatusResponse.builder()
+                        .accountStatus(savedProfile.getAccountStatus())
+                        .customerId(customerId)
+                        .updatedAt(savedProfile.getUpdatedAt())
+                        .build())
+                .build();
+    }
+
+    public ApiResponse<Void> deleteCustomerByAdmin(UUID customerId) {
+        CustomerProfile profile=customerProfileRepository.findById(customerId)
+                .orElseThrow(()->new CustomerNotFoundException(CUSTOMER_PROFILE_NOT_FOUND));
+
+        customerProfileRepository.delete(profile);
+        return ApiResponse.<Void>builder()
+                .success(true)
+                .message("customer profile deleted successfully")
+                .build();
+    }
 }

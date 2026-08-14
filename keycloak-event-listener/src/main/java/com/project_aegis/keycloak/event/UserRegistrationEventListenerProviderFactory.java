@@ -61,7 +61,7 @@ public class UserRegistrationEventListenerProviderFactory implements EventListen
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
 
-        LOG.info(PROVIDER_ID + " initialized — webhookUrl=" + webhookUrl);
+        LOG.info( "{} initialized — webhookUrl= {}" ,PROVIDER_ID,webhookUrl);
     }
 
     @Override

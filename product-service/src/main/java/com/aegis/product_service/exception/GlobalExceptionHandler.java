@@ -11,10 +11,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final ZoneId ZONE_ID_OF_INDIA= ZoneId.of("Asia/Kolkata");
     /**
      * <p>Handles validation exceptions.</p>
      *
@@ -35,7 +38,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .message(errorMessage)
                 .status(HttpStatus.BAD_REQUEST.value())
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZONE_ID_OF_INDIA))
                 .build();
 
         log.warn(
@@ -61,7 +64,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .message(ex.getMessage())
                 .status(HttpStatus.NOT_FOUND.value())
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZONE_ID_OF_INDIA))
                 .build();
 
         log.warn(
@@ -87,7 +90,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .message(ex.getMessage())
                 .status(HttpStatus.CONFLICT.value())
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZONE_ID_OF_INDIA))
                 .build();
 
         log.warn(
@@ -112,7 +115,7 @@ public class GlobalExceptionHandler {
         ErrorResponse response = ErrorResponse.builder()
                 .message("Database error: " + ex.getMostSpecificCause().getMessage())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZONE_ID_OF_INDIA))
                 .build();
         log.warn(
                 "Database error: {}",
@@ -135,7 +138,7 @@ public class GlobalExceptionHandler {
         ErrorResponse response = ErrorResponse.builder()
                 .message("Malformed JSON request: " + ex.getMostSpecificCause().getMessage())
                 .status(HttpStatus.BAD_REQUEST.value())
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZONE_ID_OF_INDIA))
                 .build();
         log.warn(
                 "Malformed JSON request: {}",

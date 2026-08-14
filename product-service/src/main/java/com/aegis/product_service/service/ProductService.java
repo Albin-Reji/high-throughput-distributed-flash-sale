@@ -47,7 +47,6 @@ public class ProductService {
     private final ProductAttributeRepository productAttributeRepository;
     private final ProductMapper productMapper;
 
-
     /**
      * <p>Creates a new product.</p>
      *
@@ -61,17 +60,28 @@ public class ProductService {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFound(CATEGORY_NOT_FOUND_WITH_ID + request.getCategoryId()));
         // check for skucode is already exist
-        request.getSkus().forEach(skuRequest -> {
-            if (skuRepository.existsBySkuCode(skuRequest.getSkuCode())) {
-                throw new ResourceAlreadyExists("SKU code already exists: " + skuRequest.getSkuCode());
-            }
-        });
+        request.getSkus()
+                .forEach(skuRequest -> {
+                    if (skuRepository.existsBySkuCode(skuRequest.getSkuCode())) {
+                        throw new ResourceAlreadyExists("SKU code already exists: " + skuRequest.getSkuCode());
+                    }
+                });
 
-        Product product = Product.builder().category(category).title(request.getTitle()).description(request.getDescription()).build();
+        Product product = Product.builder()
+                .category(category)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .build();
 
-        List<ProductAttribute> productAttributes = request.getProductAttributes().stream().map(prodAttr -> productMapper.toEntity(prodAttr, product)).collect(Collectors.toCollection(ArrayList::new));
+        List<ProductAttribute> productAttributes = request.getProductAttributes()
+                .stream()
+                .map(prodAttr -> productMapper.toEntity(prodAttr, product))
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        List<Sku> skus = request.getSkus().stream().map(skuRequest -> productMapper.toEntity(skuRequest, product)).collect(Collectors.toCollection(ArrayList::new));
+        List<Sku> skus = request.getSkus()
+                .stream()
+                .map(skuRequest -> productMapper.toEntity(skuRequest, product))
+                .collect(Collectors.toCollection(ArrayList::new));
 
         product.setProductAttributes(productAttributes);
         product.setSkus(skus);
@@ -109,9 +119,9 @@ public class ProductService {
     /**
      * <p>Retrieves all products with pagination.</p>
      *
-     * @param page zero-based page index to retrieve
-     * @param size the size of the page to be returned
-     * @return {@link PageResponse} containing {@link ProductResponse} with the requested page of products
+     * @param page
+     * @param size
+     * @return {@link PageResponse} containing {@link ProductResponse}
      */
     public PageResponse<ProductResponse> getAllProducts(int page, int size) {
         Pageable pageable = PageRequest.of(
@@ -134,8 +144,8 @@ public class ProductService {
     /**
      * <p>Retrieves a product by its ID.</p>
      *
-     * @param id UUID of the product to retrieve
-     * @return {@link ProductResponse} representing the found product
+     * @param id
+     * @return {@link ProductResponse}
      */
     public ProductResponse getProductById(UUID id) {
         Product product = productRepository.findById(id)
@@ -215,9 +225,9 @@ public class ProductService {
     /**
      * <p>Searches for products by title.</p>
      *
-     * @param pageable Pageable instance for paging and sorting
-     * @param query    Case-insensitive substring to search for within product titles
-     * @return {@link PageResponse} containing {@link ProductResponse} matching the query
+     * @param pageable
+     * @param query
+     * @return {@link PageResponse} containing {@link ProductResponse}
      */
     public PageResponse<ProductResponse> searchProductsByTitle(Pageable pageable, String query) {
         Page<Product> productPage = productRepository.findByTitleContainingIgnoreCase(query, pageable);
@@ -238,9 +248,9 @@ public class ProductService {
     /**
      * <p>Retrieves a page of products by category ID.</p>
      *
-     * @param pageable   Pageable instance for paging and sorting
-     * @param categoryId UUID of the category to filter products by
-     * @return {@link PageResponse} containing {@link ProductSummaryResponse} for products in the category
+     * @param pageable
+     * @param categoryId
+     * @return {@link PageResponse} containing {@link ProductSummaryResponse}
      */
 
     public PageResponse<ProductSummaryResponse> getProductsByCategory(Pageable pageable, UUID categoryId) {
@@ -264,9 +274,9 @@ public class ProductService {
     /**
      * <p>Retrieves a page of SKUs by product ID.</p>
      *
-     * @param pageable  Pageable instance for paging and sorting
-     * @param productId UUID of the product whose SKUs should be returned
-     * @return {@link PageResponse} containing {@link SkuResponse} objects for the product
+     * @param pageable
+     * @param productId
+     * @return {@link  SkuResponse}
      */
     public PageResponse<SkuResponse> getAllSkusByProductId(Pageable pageable, UUID productId) {
         productRepository.findById(productId)
