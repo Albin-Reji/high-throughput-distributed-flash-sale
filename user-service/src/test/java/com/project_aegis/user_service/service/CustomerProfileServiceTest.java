@@ -58,12 +58,11 @@ class CustomerProfileServiceTest {
 
     private CustomerProfile testProfile;
     private UUID profileId;
-    private Instant now;
 
     @BeforeEach
     void setUp() {
         profileId = UUID.randomUUID();
-        now = Instant.now();
+        Instant now = Instant.now();
 
         testProfile = CustomerProfile.builder()
                 .id(profileId)
@@ -322,7 +321,7 @@ class CustomerProfileServiceTest {
                     customerProfileService.getAllCustomers(pageable);
 
             assertThat(result.getContent()).hasSize(1);
-            assertThat(result.getContent().get(0)).isEqualTo(expectedResponse);
+            assertThat(result.getContent().getFirst()).isEqualTo(expectedResponse);
             assertThat(result.getPage()).isZero();
             assertThat(result.getSize()).isEqualTo(10);
             assertThat(result.getTotalElements()).isEqualTo(1);

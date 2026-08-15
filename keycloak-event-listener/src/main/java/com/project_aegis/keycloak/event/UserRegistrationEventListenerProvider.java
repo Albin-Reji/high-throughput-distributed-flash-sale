@@ -87,7 +87,7 @@ public class UserRegistrationEventListenerProvider implements EventListenerProvi
                         + " — body: " + response.body());
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             // Log and swallow — registration must never fail due to webhook issues
             LOG.log(Level.SEVERE,
                     "Failed to sync user profile for event userId=" + event.getUserId(), e);

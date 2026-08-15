@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -25,14 +26,13 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                             KeycloakJwtAuthenticationConverter keycloakJwtAuthenticationConverter)
-            throws Exception {
+    {
 
         http
                 // Stateless REST API using Bearer JWT authentication.
                 // Authentication credentials are supplied explicitly via the Authorization header,
                 // so CSRF protection is not required.
                 .csrf(AbstractHttpConfigurer::disable)
-
                 .authorizeHttpRequests(auth -> auth
 
                         // Public endpoints
