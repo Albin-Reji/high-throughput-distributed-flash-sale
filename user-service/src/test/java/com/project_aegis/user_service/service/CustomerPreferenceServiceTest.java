@@ -35,11 +35,10 @@ class CustomerPreferenceServiceTest {
     private static final String KEYCLOAK_USER_ID = "kc-user-001";
 
     private CustomerProfile testProfile;
-    private UUID profileId;
 
     @BeforeEach
     void setUp() {
-        profileId = UUID.randomUUID();
+        UUID profileId = UUID.randomUUID();
 
         testProfile = CustomerProfile.builder()
                 .id(profileId)

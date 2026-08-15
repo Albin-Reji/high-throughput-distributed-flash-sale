@@ -191,7 +191,7 @@ class CustomerAddressServiceTest {
 
             assertThat(result.isSuccess()).isTrue();
             assertThat(result.getData()).hasSize(1);
-            assertThat(result.getData().get(0).getCity()).isEqualTo("Mumbai");
+            assertThat(result.getData().getFirst().getCity()).isEqualTo("Mumbai");
         }
 
         @Test
