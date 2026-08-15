@@ -25,14 +25,21 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                            KeycloakJwtAuthenticationConverter keycloakJwtAuthenticationConverter)
-    {
+                                            KeycloakJwtAuthenticationConverter keycloakJwtAuthenticationConverter) {
 
         http
                 // Stateless REST API using Bearer JWT authentication.
                 // Authentication credentials are supplied explicitly via the Authorization header,
                 // so CSRF protection is not required.
                 .csrf(AbstractHttpConfigurer::disable)
+                // Session creation policy for stateless auth
+                .sessionManagement(session -> session.sessionCreationPolicy(
+                        SessionCreationPolicy.STATELESS
+                ))
+                // disabling the processing of cors in this service
+                // gateway process the cors
+                .cors(AbstractHttpConfigurer::disable)
+
                 .authorizeHttpRequests(auth -> auth
 
                         // Public endpoints
