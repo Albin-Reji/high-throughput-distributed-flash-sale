@@ -1,0 +1,60 @@
+spring:
+  #database configuration
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  #hibernate configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  #keycloak configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+
+  #flyway configuration for db migration
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+#   actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,loggers,threaddump,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      simple:
+        enabled: true
+
+# keycloak data (not used)
+keycloak:
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL}
+  realm: ${KEYCLOAK_REALM}
+  resource: ${KEYCLOAK_RESOURCE}
+  credentials:
+    secret: ${KEYCLOAK_CREDENTIALS_SECRET}
+
+# server configuration
+server:
+  port: ${SERVER_PORT:8083}
+
+
+
+# logging
+logging:
+  level:
+    com.project_aegis.user_service.controller.internal: DEBUG
