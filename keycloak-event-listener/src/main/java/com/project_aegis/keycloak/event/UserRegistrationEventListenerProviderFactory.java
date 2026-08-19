@@ -1,5 +1,6 @@
 package com.project_aegis.keycloak.event;
 
+import lombok.extern.slf4j.Slf4j;
 import org.keycloak.Config;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
@@ -30,10 +31,9 @@ import java.util.logging.Logger;
  * <p>Then enable the event listener in your realm's Events settings
  * by adding {@code "user-registration-sync"} to the listeners list.</p>
  */
+@Slf4j
 public class UserRegistrationEventListenerProviderFactory implements EventListenerProviderFactory {
 
-    private static final Logger LOG =
-            Logger.getLogger(UserRegistrationEventListenerProviderFactory.class.getName());
 
     public static final String PROVIDER_ID = "user-registration-sync";
 
@@ -53,7 +53,7 @@ public class UserRegistrationEventListenerProviderFactory implements EventListen
         this.apiKey = config.get("apiKey", "");
 
         if (apiKey.isBlank()) {
-            LOG.warning("No API key configured for " + PROVIDER_ID
+            log.warn("No API key configured for " + PROVIDER_ID
                     + " — webhook calls will be unauthenticated!");
         }
 
@@ -61,7 +61,8 @@ public class UserRegistrationEventListenerProviderFactory implements EventListen
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
 
-        LOG.info( "{} initialized — webhookUrl= {}" ,PROVIDER_ID,webhookUrl);
+        log.info( "{} initialized " , PROVIDER_ID);
+        log.info("webhook url: {}", webhookUrl);
     }
 
     @Override

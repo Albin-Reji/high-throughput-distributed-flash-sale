@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -24,6 +25,14 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http.csrf(AbstractHttpConfigurer::disable)
+                // Session creation policy for stateless auth
+                .sessionManagement(session -> session.sessionCreationPolicy(
+                        SessionCreationPolicy.STATELESS
+                ))
+                // disabling the processing of cors in this service
+                // gateway process the cors
+                .cors(AbstractHttpConfigurer::disable)
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health",
                                 "/swagger-ui/**",
@@ -36,14 +45,14 @@ public class SecurityConfig {
 
 
                         .requestMatchers("/api/v1/products/**",
-                                        "/api/v1/categories/**")
+                                "/api/v1/categories/**")
                         .hasRole("USER")
 //                     admin privilege apis
 
                         .anyRequest()
                         .authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(
-                        jwt -> jwt.jwtAuthenticationConverter(keycloakJwtAuthenticationConverter))
+                                jwt -> jwt.jwtAuthenticationConverter(keycloakJwtAuthenticationConverter))
                         .authenticationEntryPoint(securityAuthenticationEntryPoint)
                         .accessDeniedHandler(securityAccessDeniedHandler)
 

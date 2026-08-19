@@ -8,6 +8,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -87,7 +88,7 @@ public class UserRegistrationEventListenerProvider implements EventListenerProvi
                         + " — body: " + response.body());
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException | IOException | InterruptedException e) {
             // Log and swallow — registration must never fail due to webhook issues
             LOG.log(Level.SEVERE,
                     "Failed to sync user profile for event userId=" + event.getUserId(), e);
