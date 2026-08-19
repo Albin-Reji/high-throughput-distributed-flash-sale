@@ -2,6 +2,7 @@ package com.project_aegis.user_service.controller.internal;
 
 import com.project_aegis.user_service.config.InternalApiProperties;
 import com.project_aegis.user_service.dto.response.ApiResponse;
+import com.project_aegis.user_service.dto.response.ProfileCreationResult;
 import com.project_aegis.user_service.dto.webhook.KeycloakUserRegisteredEvent;
 import com.project_aegis.user_service.entity.CustomerProfile;
 import com.project_aegis.user_service.service.CustomerProfileService;
@@ -50,14 +51,12 @@ public class WebhookController {
 
         log.info("Received user-registered webhook for keycloakUserId={}", event.keycloakUserId());
 
-        CustomerProfile profile =
+        ProfileCreationResult profile =
                 customerProfileService.createProfileFromKeycloakEvent(event);
 
-        // If the profile already existed (idempotent), return 200 OK
-        // If newly created, return 201 Created
-        boolean isNew = profile.getCreatedAt() != null
-                && profile.getUpdatedAt() != null
-                && profile.getCreatedAt().equals(profile.getUpdatedAt());
+//        if profile.created is true then it's new Profile
+//        else it's a new Profile
+        boolean isNew = profile.isCreated();
 
         HttpStatus status = isNew ? HttpStatus.CREATED : HttpStatus.OK;
         String message = isNew

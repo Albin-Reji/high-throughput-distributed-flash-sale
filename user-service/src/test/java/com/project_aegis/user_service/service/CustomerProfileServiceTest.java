@@ -3,10 +3,7 @@ package com.project_aegis.user_service.service;
 import com.project_aegis.user_service.dto.customer.request.CustomerUpdateRequest;
 import com.project_aegis.user_service.dto.customer.response.CustomerProfileResponse;
 import com.project_aegis.user_service.dto.request.StatusRequest;
-import com.project_aegis.user_service.dto.response.ApiResponse;
-import com.project_aegis.user_service.dto.response.PageResponse;
-import com.project_aegis.user_service.dto.response.ProfileResponse;
-import com.project_aegis.user_service.dto.response.StatusResponse;
+import com.project_aegis.user_service.dto.response.*;
 import com.project_aegis.user_service.dto.webhook.KeycloakUserRegisteredEvent;
 import com.project_aegis.user_service.entity.AccountStatus;
 import com.project_aegis.user_service.entity.CustomerPreference;
@@ -104,11 +101,11 @@ class CustomerProfileServiceTest {
             when(customerProfileRepository.save(any(CustomerProfile.class)))
                     .thenReturn(testProfile);
 
-            CustomerProfile result = customerProfileService.createProfileFromKeycloakEvent(event);
+            ProfileCreationResult result = customerProfileService.createProfileFromKeycloakEvent(event);
 
             assertThat(result).isNotNull();
-            assertThat(result.getKeycloakUserId()).isEqualTo(KEYCLOAK_USER_ID);
-            assertThat(result.getEmail()).isEqualTo(EMAIL);
+            assertThat(result.getProfile().getKeycloakUserId()).isEqualTo(KEYCLOAK_USER_ID);
+            assertThat(result.getProfile().getEmail()).isEqualTo(EMAIL);
 
             ArgumentCaptor<CustomerProfile> captor = ArgumentCaptor.forClass(CustomerProfile.class);
             verify(customerProfileRepository).save(captor.capture());
@@ -131,9 +128,9 @@ class CustomerProfileServiceTest {
             when(customerProfileRepository.findByKeycloakUserId(KEYCLOAK_USER_ID))
                     .thenReturn(Optional.of(testProfile));
 
-            CustomerProfile result = customerProfileService.createProfileFromKeycloakEvent(event);
+            ProfileCreationResult result = customerProfileService.createProfileFromKeycloakEvent(event);
 
-            assertThat(result).isSameAs(testProfile);
+            assertThat(result.getProfile()).isSameAs(testProfile);
             verify(customerProfileRepository, never()).save(any());
         }
     }

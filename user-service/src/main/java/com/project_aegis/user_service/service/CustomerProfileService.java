@@ -3,10 +3,7 @@ package com.project_aegis.user_service.service;
 import com.project_aegis.user_service.dto.customer.request.CustomerUpdateRequest;
 import com.project_aegis.user_service.dto.customer.response.CustomerProfileResponse;
 import com.project_aegis.user_service.dto.request.StatusRequest;
-import com.project_aegis.user_service.dto.response.ApiResponse;
-import com.project_aegis.user_service.dto.response.PageResponse;
-import com.project_aegis.user_service.dto.response.ProfileResponse;
-import com.project_aegis.user_service.dto.response.StatusResponse;
+import com.project_aegis.user_service.dto.response.*;
 import com.project_aegis.user_service.dto.webhook.KeycloakUserRegisteredEvent;
 import com.project_aegis.user_service.entity.AccountStatus;
 import com.project_aegis.user_service.entity.CustomerPreference;
@@ -43,7 +40,7 @@ public class CustomerProfileService {
      * already exists (idempotent).
      */
     @Transactional
-    public CustomerProfile createProfileFromKeycloakEvent(KeycloakUserRegisteredEvent event) {
+    public ProfileCreationResult createProfileFromKeycloakEvent(KeycloakUserRegisteredEvent event) {
 
         // Idempotency check — if the profile already exists, return it
         Optional<CustomerProfile> existing =
@@ -52,7 +49,10 @@ public class CustomerProfileService {
         if (existing.isPresent()) {
             log.info("CustomerProfile already exists for keycloakUserId={}, skipping creation",
                     event.keycloakUserId());
-            return existing.get();
+            return ProfileCreationResult.builder()
+                    .profile(existing.get())
+                    .created(false)
+                    .build();
         }
 
         // Build the new profile
@@ -79,7 +79,10 @@ public class CustomerProfileService {
         log.info("CustomerProfile created: id={}, keycloakUserId={}, email={}",
                 saved.getId(), saved.getKeycloakUserId(), saved.getEmail());
 
-        return saved;
+        return  ProfileCreationResult.builder()
+                .profile(saved)
+                .created(true)
+                .build();
     }
 
     public ApiResponse<CustomerProfileResponse> getCurrentCustomer(String keycloakUserId) {
