@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: inventory-service
+
+  profiles:
+    active: ${SPRING_PROFILE_ACTIVE:dev}
