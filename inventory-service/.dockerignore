@@ -1,0 +1,9 @@
+**/.git
+**/.gitignore
+**/.vscode
+**/.idea
+**/target
+**/build
+**/*.log
+**/.env
+**/.env-example
