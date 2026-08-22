@@ -57,6 +57,8 @@ public class InternalInventoryService {
                     request.getCampaignId(), existingReservations);
         }
 
+
+
         // Validate campaign if specified
         final FlashCampaign campaign;
         if (request.getCampaignId() != null) {
@@ -209,11 +211,11 @@ public class InternalInventoryService {
                     .orElseThrow(() -> new ResourceNotFoundException("Inventory", "skuId", reservation.getSkuId()));
 
             // Decrement total quantity (available was already reduced during reservation)
-            int newTotal = inventory.getTotalQuantity() - reservation.getQuantity();
+            int newTotal = inventory.getAvailableQuantity() - reservation.getQuantity();
             if (newTotal < 0) {
                 newTotal = 0;
             }
-            inventory.setTotalQuantity(newTotal);
+            inventory.setAvailableQuantity(newTotal);
             inventoryRepository.save(inventory);
 
             reservation.setStatus(ReservationStatus.COMMITTED);
