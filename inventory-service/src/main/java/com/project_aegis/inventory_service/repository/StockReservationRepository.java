@@ -2,6 +2,7 @@ package com.project_aegis.inventory_service.repository;
 
 import com.project_aegis.inventory_service.entity.ReservationStatus;
 import com.project_aegis.inventory_service.entity.StockReservation;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -22,4 +23,6 @@ public interface StockReservationRepository extends JpaRepository<StockReservati
     List<StockReservation> findAllByStatusAndExpiresAtBefore(ReservationStatus status, Instant time);
 
     boolean existsByOrderIdAndStatus(UUID orderId, ReservationStatus status);
+
+    Optional<StockReservation> findByOrderId(@NotNull UUID orderId);
 }
