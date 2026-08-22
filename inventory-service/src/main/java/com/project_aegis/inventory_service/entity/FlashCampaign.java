@@ -21,7 +21,7 @@ public class FlashCampaign {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @Column(name = "start_time", nullable = false)

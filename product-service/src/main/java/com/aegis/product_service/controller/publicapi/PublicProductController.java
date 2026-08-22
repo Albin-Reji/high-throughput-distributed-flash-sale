@@ -7,6 +7,7 @@ import com.aegis.product_service.dto.response.ProductSummaryResponse;
 import com.aegis.product_service.dto.response.SkuResponse;
 import com.aegis.product_service.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
@@ -88,5 +90,11 @@ public class PublicProductController {
             @PathVariable UUID productId
     ) {
         return ResponseEntity.ok(productService.getProductAttributesByProductId(pageable, productId));
+    }
+
+    @GetMapping("/skus/{skuId}")
+    public SkuResponse isSkuExist(@PathVariable("skuId") UUID skuId){
+        log.info("The /skus/{skuId} called In PRODUCT-SERVICE with Id: {}", skuId);
+        return productService.isSkuExist(skuId);
     }
 }

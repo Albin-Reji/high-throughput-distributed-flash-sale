@@ -1,8 +1,8 @@
-package com.aegis.product_service.config;
+package com.project_aegis.inventory_service.config;
 
-import com.aegis.product_service.security.KeycloakJwtAuthenticationConverter;
-import com.aegis.product_service.security.SecurityAccessDeniedHandler;
-import com.aegis.product_service.security.SecurityAuthenticationEntryPoint;
+import com.project_aegis.inventory_service.security.KeycloakJwtAuthenticationConverter;
+import com.project_aegis.inventory_service.security.SecurityAccessDeniedHandler;
+import com.project_aegis.inventory_service.security.SecurityAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,15 +39,15 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**")
                         .permitAll()
-
-                        .requestMatchers("/api/v1/admin/**")
+                        // admin privilege apis — requires ADMIN role
+                        .requestMatchers("/api/v1/inventory/admin/**")
                         .hasRole("ADMIN")
-
-
-                        .requestMatchers("/api/v1/products/**",
-                                "/api/v1/categories/**")
-                        .hasAnyRole("USER", "ADMIN")
-//                     admin privilege apis
+                        // internal service-to-service endpoints (secured via X-Internal-Api-Key)
+                        .requestMatchers("/api/v1/inventory/internal/**")
+                        .permitAll()
+                        // public campaign APIs — authenticated users (JWT required, any role)
+                        .requestMatchers("/api/v1/inventory/campaigns/**")
+                        .authenticated()
 
                         .anyRequest()
                         .authenticated())
@@ -63,3 +63,4 @@ public class SecurityConfig {
 
     }
 }
+
