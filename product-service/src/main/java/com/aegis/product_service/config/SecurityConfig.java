@@ -46,7 +46,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/v1/products/**",
                                 "/api/v1/categories/**")
-                        .hasRole("USER")
+                        .hasAnyRole("USER", "ADMIN")
 //                     admin privilege apis
 
                         .anyRequest()

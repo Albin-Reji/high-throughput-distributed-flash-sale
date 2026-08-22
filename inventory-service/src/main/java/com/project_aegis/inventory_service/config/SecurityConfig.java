@@ -39,10 +39,15 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**")
                         .permitAll()
-                        //admin privilege apis
-                        .requestMatchers("/api/v1/admin/**")
+                        // admin privilege apis — requires ADMIN role
+                        .requestMatchers("/api/v1/inventory/admin/**")
                         .hasRole("ADMIN")
-
+                        // internal service-to-service endpoints (secured via X-Internal-Api-Key)
+                        .requestMatchers("/api/v1/inventory/internal/**")
+                        .permitAll()
+                        // public campaign APIs — authenticated users (JWT required, any role)
+                        .requestMatchers("/api/v1/inventory/campaigns/**")
+                        .authenticated()
 
                         .anyRequest()
                         .authenticated())
@@ -58,3 +63,4 @@ public class SecurityConfig {
 
     }
 }
+

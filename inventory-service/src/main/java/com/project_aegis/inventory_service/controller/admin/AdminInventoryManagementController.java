@@ -40,6 +40,7 @@ public class AdminInventoryManagementController {
 
     // newTotal= oldTotal + request.getQuantityDelta
     //ex: newTotal=100 +25 = 125
+    //newAvailableQuantity=100 +25 = 125
     @Operation(summary = "Adjust inventory stock delta (positive for restock, negative for damaged/correction)")
     @PatchMapping("/{skuId}")
     public ResponseEntity<ApiResponse<InventoryResponse>> adjustInventory(

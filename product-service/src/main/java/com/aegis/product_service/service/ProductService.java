@@ -476,6 +476,20 @@ public class ProductService {
                 .message("Product attribute deleted successfully")
                 .build();
     }
+
+    public SkuResponse isSkuExist(UUID skuId) {
+        Sku sku=skuRepository.findById(skuId)
+                .orElse(null);
+
+        return sku==null?null : SkuResponse.builder()
+                .id(sku.getId())
+                .color(sku.getColor())
+                .size(sku.getSize())
+                .price(sku.getPrice())
+                .skuCode(sku.getSkuCode())
+                .build();
+
+    }
 }
 
 
