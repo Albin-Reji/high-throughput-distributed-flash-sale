@@ -7,6 +7,7 @@ import com.project_aegis.inventory_service.dto.internal.request.StockReservation
 import com.project_aegis.inventory_service.dto.internal.response.StockCheckResponse;
 import com.project_aegis.inventory_service.dto.internal.response.StockReservationResponse;
 import com.project_aegis.inventory_service.dto.response.ApiResponse;
+import com.project_aegis.inventory_service.exception.InvalidOperationException;
 import com.project_aegis.inventory_service.service.InternalInventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -76,12 +78,14 @@ public class InternalInventoryController {
 
     private void validateApiKey(String apiKey) {
         String configuredKey = internalApiProperties.getKey();
-        if (configuredKey != null && !configuredKey.isEmpty()) {
-            if (apiKey == null || !configuredKey.equals(apiKey)) {
-                log.warn("Internal API call rejected — invalid or missing API key");
-                throw new com.project_aegis.inventory_service.exception.InvalidOperationException(
-                        "Unauthorized: Invalid internal API key");
-            }
+
+        if (!StringUtils.hasText(configuredKey)) {
+            throw new IllegalStateException("Internal API key is not configured");
+        }
+
+        if (!StringUtils.hasText(apiKey) || !configuredKey.equals(apiKey)) {
+            log.warn("Internal API call rejected — invalid or missing API key");
+            throw new InvalidOperationException("Unauthorized: Invalid internal API key");
         }
     }
 }
