@@ -1,0 +1,75 @@
+spring:
+  #database configuration
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/order_service_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:albin}
+    driver-class-name: org.postgresql.Driver
+  #hibernate configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  #keycloak configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/project-aegis}
+
+  #flyway configuration for db migration
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    out-of-order: true
+    baseline-on-migrate: true
+    baseline-version: 0
+
+# actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,loggers,threaddump,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      simple:
+        enabled: true
+
+# keycloak data
+keycloak:
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://localhost:8180}
+  realm: ${KEYCLOAK_REALM:project-aegis}
+  resource: ${KEYCLOAK_RESOURCE:order-service}
+  credentials:
+    secret: ${KEYCLOAK_CREDENTIALS_SECRET:secret}
+
+# server configuration
+server:
+  port: ${SERVER_PORT:8084}
+
+service:
+  product:
+    url: ${SERVICE_PRODUCT_URL:http://localhost:8082}
+  user:
+    url: ${SERVICE_USER_URL:http://localhost:8081}
+  inventory:
+    url: ${SERVICE_INVENTORY_URL:http://localhost:8083}
+
+# internal api for verification
+internal:
+  api:
+    orderKey: ${INTERNAL_API_KEY}
+    inventoryKey: ${INVENTORY_INTERNAL_API_KEY}
+
+# logging
+logging:
+  level:
+    com.project_aegis.order_service: DEBUG
