@@ -39,6 +39,9 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**")
                         .permitAll()
+                        // metrics only accessible with ROLE_SRE
+                        .requestMatchers("/actuator/metrics/**", "/actuator/**")
+                        .hasRole("SRE")
                         // admin privilege apis — requires ADMIN role
                         .requestMatchers("/api/v1/inventory/admin/**")
                         .hasRole("ADMIN")
