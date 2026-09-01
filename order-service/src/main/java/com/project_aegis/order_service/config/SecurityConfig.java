@@ -33,6 +33,9 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
                         ).permitAll()
+                        // metrics only accessible with ROLE_SRE
+                        .requestMatchers("/actuator/metrics/**", "/actuator/**")
+                        .hasRole("SRE")
                         // Internal APIs - secured via X-Internal-Api-Key header
                         .requestMatchers("/api/v1/internal/**").permitAll()
                         // Admin APIs - requires ADMIN role
