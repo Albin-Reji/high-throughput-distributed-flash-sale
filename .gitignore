@@ -39,3 +39,4 @@ build/
 #markdown files
 keycloak-pitfalls.md
 use_cases_project -argis
+OPTIMIZATION_README.md
