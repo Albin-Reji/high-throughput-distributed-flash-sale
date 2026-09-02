@@ -211,7 +211,7 @@ public class InternalInventoryService {
                     .orElseThrow(() -> new ResourceNotFoundException("Inventory", "skuId", reservation.getSkuId()));
 
             // Decrement total quantity (available was already reduced during reservation)
-            inventory.setAvailableQuantity(inventory.getTotalQuantity() - reservation.getQuantity());
+            inventory.setTotalQuantity(inventory.getTotalQuantity() - reservation.getQuantity());
             inventoryRepository.save(inventory);
 
             reservation.setStatus(ReservationStatus.COMMITTED);
