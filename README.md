@@ -704,6 +704,8 @@ Each service exposes Spring Boot Actuator endpoints for health checks, applicati
 
 ## ⚡ High-Concurrency Flash Sale Best Practices & Roadmap
 
+> 📖 **Full Guide & Roadmap**: See the dedicated [System Optimization & High-Throughput Roadmap](file:///c:/A_Drive/project-aegis/OPTIMIZATION_README.md) for the complete master TODO list, architecture diagrams, code blueprints, and deep-dive optimization strategies.
+
 To sustain ultra-high write concurrency during flash events (e.g. 100,000+ RPS), the architecture is prepared for the following evolutions:
 
 1. **Redis Lua Scripts for In-Memory Atomic Reservation**:
