@@ -2,10 +2,7 @@ package com.project_aegis.order_service.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project_aegis.order_service.dto.response.CreateOrderResponse;
-import com.project_aegis.order_service.entity.IdempotencyRecord;
-import com.project_aegis.order_service.entity.Order;
-import com.project_aegis.order_service.entity.OutboxEvent;
-import com.project_aegis.order_service.entity.OutboxStatus;
+import com.project_aegis.order_service.entity.*;
 import com.project_aegis.order_service.mapper.OrderMapper;
 import com.project_aegis.order_service.repository.IdempotencyRecordRepository;
 import com.project_aegis.order_service.repository.OrderRepository;
@@ -33,13 +30,21 @@ public class OrderPersistenceService {
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
 
+
     @Transactional
-    public Order persistOrder(Order order,
+    public Order saveInitOrder(Order order){
+        order.setStatus(OrderStatus.PENDING);
+        return orderRepository.save(order);
+    }
+
+
+    @Transactional
+    public Order confirmOrder(Order order,
                               UUID customerId,
                               String idempotencyKey
                               ){
-        // save order in db
-        Order savedOrder = saveOrder(order);
+        order.setStatus(OrderStatus.AWAITING_PAYMENT);
+        Order savedOrder = orderRepository.save(order);
         //save outbox event to db
         createOrderOutboxEvent(savedOrder);
 
@@ -52,9 +57,10 @@ public class OrderPersistenceService {
         return savedOrder;
 
     }
-
-    private Order saveOrder(Order order) {
-        return orderRepository.save(order);
+    @Transactional
+    public void failOrder(Order order){
+        order.setStatus(OrderStatus.FAILED);
+        orderRepository.save(order);
     }
 
     private void createOrderOutboxEvent(Order order) {

@@ -98,15 +98,30 @@ public class OrderServiceImpl implements OrderService {
                 buildOrder(request, customerId, address, bearerToken, orderNumber);
 
         Order order = orderBuildResult.order();
-        Order savedOrder = orderPersistenceService.persistOrder(order, customerId, idempotencyKey);
+        Order savedOrder = orderPersistenceService.saveInitOrder(order);
 
-        reserveStock(
-                savedOrder,
-                customerId,
-                orderBuildResult.reservationItems()
-        );
 
-        return orderMapper.toCreateResponse(savedOrder);
+         // if reserve stock throe an exception ,
+         // OrderStatus={@link OrderStatus#FAILED} and return error response to client
+        try{
+            reserveStock(
+                    savedOrder,
+                    customerId,
+                    orderBuildResult.reservationItems()
+            );
+        } catch (Exception e) {
+            orderPersistenceService.failOrder(savedOrder);
+            log.error(
+                    "Stock reservation failed for orderId: {}. Failed order.",
+                    savedOrder.getId(),
+                    e
+            );
+
+        }
+        // if reserveStock() is success then confirm the order
+        Order confirmOrder=orderPersistenceService.confirmOrder(savedOrder, customerId, idempotencyKey);
+
+        return orderMapper.toCreateResponse(confirmOrder);
     }
 
     @Override
