@@ -42,7 +42,6 @@ import java.util.UUID;
 public class OrderServiceImpl implements OrderService {
 
     private static final String AGGREGATE_TYPE_ORDER = "ORDER";
-    private static final String EVENT_ORDER_CREATED = "ORDER_CREATED";
     private static final String EVENT_ORDER_CANCELLED = "ORDER_CANCELLED";
 
     private static final String DEFAULT_RECIPIENT_NAME = "Customer";
@@ -55,8 +54,6 @@ public class OrderServiceImpl implements OrderService {
     private static final String CANCELLATION_REASON = "Order cancelled by customer";
 
     private static final String DEFAULT_CURRENCY = "INR";
-
-    private static final int CREATED_STATUS_CODE = 201;
     private static final int ORDER_NUMBER_LENGTH = 8;
 
     private final OrderRepository orderRepository;
@@ -67,9 +64,9 @@ public class OrderServiceImpl implements OrderService {
     private final InventoryServiceClient inventoryServiceClient;
     private final OrderMapper orderMapper;
     private final ObjectMapper objectMapper;
+    private final OrderPersistenceService orderPersistenceService;
 
     @Override
-    @Transactional
     public CreateOrderResponse createOrder(
             UUID customerId,
             String idempotencyKey,
@@ -100,27 +97,31 @@ public class OrderServiceImpl implements OrderService {
         OrderBuildResult orderBuildResult =
                 buildOrder(request, customerId, address, bearerToken, orderNumber);
 
-        Order savedOrder = saveOrder(orderBuildResult.order());
+        Order order = orderBuildResult.order();
+        Order savedOrder = orderPersistenceService.saveInitOrder(order);
 
-        createOrderOutboxEvent(savedOrder);
 
-        reserveStock(
-                savedOrder,
-                customerId,
-                orderBuildResult.reservationItems()
-        );
+         // if reserve stock throe an exception ,
+         // OrderStatus={@link OrderStatus#FAILED} and return error response to client
+        try{
+            reserveStock(
+                    savedOrder,
+                    customerId,
+                    orderBuildResult.reservationItems()
+            );
+        } catch (Exception e) {
+            orderPersistenceService.failOrder(savedOrder);
+            log.error(
+                    "Stock reservation failed for orderId: {}. Failed order.",
+                    savedOrder.getId(),
+                    e
+            );
 
-        CreateOrderResponse response =
-                orderMapper.toCreateResponse(savedOrder);
+        }
+        // if reserveStock() is success then confirm the order
+        Order confirmOrder=orderPersistenceService.confirmOrder(savedOrder, customerId, idempotencyKey);
 
-        saveIdempotencyRecord(
-                idempotencyKey,
-                customerId,
-                savedOrder,
-                response
-        );
-
-        return response;
+        return orderMapper.toCreateResponse(confirmOrder);
     }
 
     @Override
@@ -199,14 +200,14 @@ public class OrderServiceImpl implements OrderService {
             return Optional.empty();
         }
 
-        Optional<IdempotencyRecord> record =
+        Optional<IdempotencyRecord> records =
                 idempotencyRecordRepository
                         .findByIdempotencyKeyAndCustomerId(
                                 idempotencyKey,
                                 customerId
                         );
 
-        if (record.isEmpty()) {
+        if (records.isEmpty()) {
             return Optional.empty();
         }
 
@@ -215,16 +216,16 @@ public class OrderServiceImpl implements OrderService {
                 idempotencyKey
         );
 
-        return deserializeCachedResponse(record.get());
+        return deserializeCachedResponse(records.get());
     }
 
     private Optional<CreateOrderResponse> deserializeCachedResponse(
-            IdempotencyRecord record
+            IdempotencyRecord records
     ) {
         try {
             CreateOrderResponse response =
                     objectMapper.readValue(
-                            record.getResponseBody(),
+                            records.getResponseBody(),
                             CreateOrderResponse.class
                     );
 
@@ -232,11 +233,11 @@ public class OrderServiceImpl implements OrderService {
         } catch (Exception ex) {
             log.warn(
                     "Failed to deserialize cached idempotency response for orderId: {}. Re-querying order.",
-                    record.getOrderId(),
+                    records.getOrderId(),
                     ex
             );
 
-            Order order = findOrder(record.getOrderId());
+            Order order = findOrder(records.getOrderId());
 
             return Optional.of(orderMapper.toCreateResponse(order));
         }
@@ -414,25 +415,6 @@ public class OrderServiceImpl implements OrderService {
                 : "Product " + sku.getSkuCode();
     }
 
-    private Order saveOrder(Order order) {
-        return orderRepository.save(order);
-    }
-
-    private void createOrderOutboxEvent(Order order) {
-        String payload = serialize(
-                orderMapper.toCreateResponse(order)
-        );
-
-        OutboxEvent event = OutboxEvent.builder()
-                .aggregateType(AGGREGATE_TYPE_ORDER)
-                .aggregateId(order.getId())
-                .eventType(EVENT_ORDER_CREATED)
-                .payload(payload)
-                .status(OutboxStatus.PENDING)
-                .build();
-
-        outboxEventRepository.save(event);
-    }
 
     private void createCancellationOutboxEvent(Order order) {
         String payload = serialize(
@@ -454,17 +436,6 @@ public class OrderServiceImpl implements OrderService {
         outboxEventRepository.save(event);
     }
 
-    private String serialize(Object value) {
-        try {
-            return objectMapper.writeValueAsString(value);
-        } catch (Exception ex) {
-            log.error("Failed to serialize outbox payload", ex);
-            throw new IllegalStateException(
-                    "Failed to serialize outbox event payload",
-                    ex
-            );
-        }
-    }
 
     private void reserveStock(
             Order order,
@@ -480,27 +451,16 @@ public class OrderServiceImpl implements OrderService {
         );
     }
 
-    private void saveIdempotencyRecord(
-            String idempotencyKey,
-            UUID customerId,
-            Order order,
-            CreateOrderResponse response
-    ) {
-        if (!StringUtils.hasText(idempotencyKey)) {
-            return;
+    private String serialize(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception ex) {
+            log.error("Failed to serialize outbox payload", ex);
+            throw new IllegalStateException(
+                    "Failed to serialize outbox event payload",
+                    ex
+            );
         }
-
-        String responseBody = serialize(response);
-
-        IdempotencyRecord record = IdempotencyRecord.builder()
-                .idempotencyKey(idempotencyKey)
-                .customerId(customerId)
-                .orderId(order.getId())
-                .responseBody(responseBody)
-                .statusCode(CREATED_STATUS_CODE)
-                .build();
-
-        idempotencyRecordRepository.save(record);
     }
 
     private void releaseStock(UUID orderId) {
