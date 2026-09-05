@@ -1,9 +1,15 @@
 package com.project_aegis.order_service.service.impl;
 
 import com.project_aegis.order_service.client.InventoryServiceClient;
+import com.project_aegis.order_service.client.dto.CustomerAddressClientResponse;
+import com.project_aegis.order_service.client.dto.SkuClientResponse;
+import com.project_aegis.order_service.dto.request.CreateOrderRequest;
+import com.project_aegis.order_service.dto.request.OrderItemRequest;
+import com.project_aegis.order_service.dto.response.CreateOrderResponse;
 import com.project_aegis.order_service.dto.response.OrderDetailResponse;
 import com.project_aegis.order_service.dto.response.OrderSummaryResponse;
 import com.project_aegis.order_service.dto.response.PageResponse;
+import com.project_aegis.order_service.entity.IdempotencyRecord;
 import com.project_aegis.order_service.entity.Order;
 import com.project_aegis.order_service.entity.OrderStatus;
 import com.project_aegis.order_service.entity.OrderType;
@@ -297,6 +303,197 @@ class OrderServiceImplTest {
 
             assertThatThrownBy(() -> orderService.cancelOrder(customerId, orderId))
                     .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  createOrder
+    // ──────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("createOrder")
+    class CreateOrder {
+
+        private String idempotencyKey;
+        private String bearerToken;
+        private UUID addressId;
+        private UUID skuId;
+        private CreateOrderRequest createRequest;
+        private CustomerAddressClientResponse addressResponse;
+        private SkuClientResponse skuResponse;
+        private CreateOrderResponse createOrderResponse;
+
+        @BeforeEach
+        void setUp() {
+            idempotencyKey = "idemp-key-123";
+            bearerToken = "Bearer test-jwt-token";
+            addressId = UUID.randomUUID();
+            skuId = UUID.randomUUID();
+
+            createRequest = CreateOrderRequest.builder()
+                    .shippingAddressId(addressId)
+                    .items(List.of(
+                            OrderItemRequest.builder()
+                                    .skuId(skuId)
+                                    .quantity(2)
+                                    .build()
+                    ))
+                    .build();
+
+            addressResponse = CustomerAddressClientResponse.builder()
+                    .id(addressId)
+                    .recipientName("John Doe")
+                    .addressLine1("123 Main St")
+                    .city("Bengaluru")
+                    .state("Karnataka")
+                    .postalCode("560001")
+                    .country("India")
+                    .build();
+
+            skuResponse = SkuClientResponse.builder()
+                    .id(skuId)
+                    .skuCode("SKU-PRO-001")
+                    .productName("MacBook Pro")
+                    .price(BigDecimal.valueOf(500))
+                    .build();
+
+            createOrderResponse = CreateOrderResponse.builder()
+                    .orderId(orderId)
+                    .orderNumber("ORD-2026-TEST1234")
+                    .status(OrderStatus.AWAITING_PAYMENT)
+                    .totalAmount(BigDecimal.valueOf(1000))
+                    .currency("INR")
+                    .build();
+        }
+
+        @Test
+        @DisplayName("should return cached response when idempotency record exists")
+        void shouldReturnCachedResponseWhenIdempotencyKeyExists() throws Exception {
+            IdempotencyRecord record = IdempotencyRecord.builder()
+                    .idempotencyKey(idempotencyKey)
+                    .customerId(customerId)
+                    .orderId(orderId)
+                    .responseBody("{\"orderNumber\":\"ORD-2026-TEST1234\"}")
+                    .statusCode(201)
+                    .build();
+
+            when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
+                    .thenReturn(Optional.of(record));
+            when(objectMapper.readValue(record.getResponseBody(), CreateOrderResponse.class))
+                    .thenReturn(createOrderResponse);
+
+            CreateOrderResponse result = orderService.createOrder(customerId, idempotencyKey, createRequest, bearerToken);
+
+            assertThat(result).isEqualTo(createOrderResponse);
+            assertThat(result.getOrderNumber()).isEqualTo("ORD-2026-TEST1234");
+            verify(userServiceClient, never()).getAddress(any(), any());
+            verify(productServiceClient, never()).getSku(any(), any());
+            verify(orderPersistenceService, never()).saveInitOrder(any());
+            verify(inventoryServiceClient, never()).reserveStock(any());
+            verify(orderPersistenceService, never()).confirmOrder(any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("should fallback to db lookup when deserializing cached response fails")
+        void shouldFallbackWhenDeserializationFails() throws Exception {
+            IdempotencyRecord record = IdempotencyRecord.builder()
+                    .idempotencyKey(idempotencyKey)
+                    .customerId(customerId)
+                    .orderId(orderId)
+                    .responseBody("malformed-json")
+                    .statusCode(201)
+                    .build();
+
+            when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
+                    .thenReturn(Optional.of(record));
+            when(objectMapper.readValue(record.getResponseBody(), CreateOrderResponse.class))
+                    .thenThrow(new RuntimeException("JSON error"));
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+            when(orderMapper.toCreateResponse(order)).thenReturn(createOrderResponse);
+
+            CreateOrderResponse result = orderService.createOrder(customerId, idempotencyKey, createRequest, bearerToken);
+
+            assertThat(result).isEqualTo(createOrderResponse);
+            verify(orderRepository).findById(orderId);
+            verify(orderMapper).toCreateResponse(order);
+        }
+
+        @Test
+        @DisplayName("should successfully create order and reserve stock")
+        void shouldCreateOrderSuccessfully() {
+            when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
+                    .thenReturn(Optional.empty());
+            when(userServiceClient.getAddress(addressId, bearerToken)).thenReturn(addressResponse);
+            when(productServiceClient.getSku(skuId, bearerToken)).thenReturn(skuResponse);
+            when(orderPersistenceService.saveInitOrder(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+            doNothing().when(inventoryServiceClient).reserveStock(any());
+            when(orderPersistenceService.confirmOrder(any(Order.class), eq(customerId), eq(idempotencyKey)))
+                    .thenReturn(order);
+            when(orderMapper.toCreateResponse(order)).thenReturn(createOrderResponse);
+
+            CreateOrderResponse result = orderService.createOrder(customerId, idempotencyKey, createRequest, bearerToken);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getOrderId()).isEqualTo(orderId);
+            verify(userServiceClient).getAddress(addressId, bearerToken);
+            verify(productServiceClient).getSku(skuId, bearerToken);
+            verify(orderPersistenceService).saveInitOrder(any(Order.class));
+            verify(inventoryServiceClient).reserveStock(any());
+            verify(orderPersistenceService).confirmOrder(any(Order.class), eq(customerId), eq(idempotencyKey));
+        }
+
+        @Test
+        @DisplayName("should call failOrder when stock reservation throws exception")
+        void shouldHandleStockReservationFailure() {
+            when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
+                    .thenReturn(Optional.empty());
+            when(userServiceClient.getAddress(addressId, bearerToken)).thenReturn(addressResponse);
+            when(productServiceClient.getSku(skuId, bearerToken)).thenReturn(skuResponse);
+            when(orderPersistenceService.saveInitOrder(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+            doThrow(new RuntimeException("Stock reservation failed"))
+                    .when(inventoryServiceClient).reserveStock(any());
+            when(orderPersistenceService.confirmOrder(any(Order.class), eq(customerId), eq(idempotencyKey)))
+                    .thenReturn(order);
+            when(orderMapper.toCreateResponse(order)).thenReturn(createOrderResponse);
+
+            CreateOrderResponse result = orderService.createOrder(customerId, idempotencyKey, createRequest, bearerToken);
+
+            assertThat(result).isNotNull();
+            verify(orderPersistenceService).failOrder(any(Order.class));
+        }
+
+        @Test
+        @DisplayName("should fail immediately when user service fails to resolve address")
+        void shouldFailWhenUserServiceFails() {
+            when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
+                    .thenReturn(Optional.empty());
+            when(userServiceClient.getAddress(addressId, bearerToken))
+                    .thenThrow(new ResourceNotFoundException("Address not found"));
+
+            assertThatThrownBy(() -> orderService.createOrder(customerId, idempotencyKey, createRequest, bearerToken))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Address not found");
+
+            verify(productServiceClient, never()).getSku(any(), any());
+            verify(orderPersistenceService, never()).saveInitOrder(any());
+            verify(inventoryServiceClient, never()).reserveStock(any());
+        }
+
+        @Test
+        @DisplayName("should fail immediately when product service fails to resolve SKU")
+        void shouldFailWhenProductServiceFails() {
+            when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
+                    .thenReturn(Optional.empty());
+            when(userServiceClient.getAddress(addressId, bearerToken)).thenReturn(addressResponse);
+            when(productServiceClient.getSku(skuId, bearerToken))
+                    .thenThrow(new RuntimeException("Product catalog unavailable"));
+
+            assertThatThrownBy(() -> orderService.createOrder(customerId, idempotencyKey, createRequest, bearerToken))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Product catalog unavailable");
+
+            verify(orderPersistenceService, never()).saveInitOrder(any());
+            verify(inventoryServiceClient, never()).reserveStock(any());
         }
     }
 }

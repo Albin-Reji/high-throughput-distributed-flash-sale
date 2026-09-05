@@ -116,6 +116,9 @@ public class OrderServiceImpl implements OrderService {
                     savedOrder.getId(),
                     e
             );
+            throw new InvalidOperationException(
+                    "Stock reservation failed. Order has been marked as FAILED."
+            );
 
         }
         // if reserveStock() is success then confirm the order
