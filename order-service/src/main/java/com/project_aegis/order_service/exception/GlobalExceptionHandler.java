@@ -64,6 +64,16 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
+    @ExceptionHandler(UserServiceClientException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUserServiceClient(UserServiceClientException ex) {
+        log.warn("User service client error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.<Void>builder()
+                        .success(false)
+                        .message("User service is currently unavailable. Please try again later.")
+                        .build());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
         String errors = ex.getBindingResult().getFieldErrors().stream()

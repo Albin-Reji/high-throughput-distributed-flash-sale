@@ -2,6 +2,7 @@ package com.project_aegis.order_service.client;
 
 import com.project_aegis.order_service.client.dto.CustomerAddressClientResponse;
 import com.project_aegis.order_service.dto.response.ApiResponse;
+import com.project_aegis.order_service.exception.UserServiceClientException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -24,6 +25,8 @@ public class UserServiceClient {
     }
 
     public CustomerAddressClientResponse getAddress(UUID addressId, String bearerToken) {
+        ApiResponse<CustomerAddressClientResponse> response ;
+
         try {
             var requestSpec = userRestClient.get()
                     .uri("/api/v1/customers/me/addresses/{addressId}", addressId);
@@ -32,26 +35,27 @@ public class UserServiceClient {
                 requestSpec.header(HttpHeaders.AUTHORIZATION, bearerToken);
             }
 
-            ApiResponse<CustomerAddressClientResponse> response = requestSpec
+            response = requestSpec
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {});
 
-            if (response != null && response.getData() != null) {
-                return response.getData();
-            }
-        } catch (Exception ex) {
-            log.warn("Failed to fetch address {} from user-service: {}. Using default address snapshot.", addressId, ex.getMessage());
-        }
 
-        // Fallback default snapshot
-        return CustomerAddressClientResponse.builder()
-                .id(addressId)
-                .recipientName("Valued Customer")
-                .addressLine1("Primary Delivery Address")
-                .city("Bengaluru")
-                .state("Karnataka")
-                .postalCode("560001")
-                .country("India")
-                .build();
+        } catch (Exception ex) {
+            log.warn("Failed to fetch address {} from user-service: {}. Using default address snapshot.",
+                    addressId, ex.getMessage());
+
+            throw new UserServiceClientException(
+                    "Unable to verify delivery address: " + addressId,
+                    ex
+            );
+        }
+        if (response == null || response.getData() == null) {
+            throw new UserServiceClientException(
+                    "Address verification failed for address: " + addressId
+            );
+        }
+        return response.getData();
+
+
     }
 }
