@@ -44,6 +44,25 @@ public class GlobalExceptionHandler {
                         .message(ex.getMessage())
                         .build());
     }
+    @ExceptionHandler(StockReservationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStockReservation(StockReservationException ex) {
+        log.warn("Stock reservation failed : {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.<Void>builder()
+                        .success(false)
+                        .message(ex.getMessage())
+                        .build());
+    }
+
+    @ExceptionHandler(ProductServiceClientException.class)
+    public ResponseEntity<ApiResponse<Void>> handleProductServiceClient(ProductServiceClientException ex) {
+        log.warn("Product service client error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.<Void>builder()
+                        .success(false)
+                        .message("Product service is currently unavailable. Please try again later.")
+                        .build());
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {

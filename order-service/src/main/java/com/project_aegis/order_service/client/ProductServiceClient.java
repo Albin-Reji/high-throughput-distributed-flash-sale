@@ -1,14 +1,13 @@
 package com.project_aegis.order_service.client;
 
 import com.project_aegis.order_service.client.dto.SkuClientResponse;
-import lombok.RequiredArgsConstructor;
+import com.project_aegis.order_service.exception.ProductServiceClientException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 @Slf4j
@@ -34,22 +33,27 @@ public class ProductServiceClient {
                     .retrieve()
                     .body(SkuClientResponse.class);
 
-            if (response != null) {
-                if (response.getProductName() == null || response.getProductName().isBlank()) {
-                    response.setProductName("Product (" + (response.getSkuCode() != null ? response.getSkuCode() : skuId.toString().substring(0, 8)) + ")");
-                }
-                return response;
+            if (response == null) {
+                log.warn("SKU {} not found in product-service. Using fallback snapshot.", skuId);
+                throw new ProductServiceClientException("SKU not found in product-service");
             }
+            if (response.getPrice() == null) {
+                throw new ProductServiceClientException(
+                        "Product service returned no price for SKU: " + skuId
+                );
+            }
+
+            return response;
+        } catch (ProductServiceClientException ex) {
+            throw ex;
+
         } catch (Exception ex) {
-            log.warn("Failed to fetch SKU {} from product-service: {}. Using fallback snapshot.", skuId, ex.getMessage());
+            log.warn("Failed to fetch SKU {} from product-service: {}. Using fallback snapshot.",
+                    skuId, ex.getMessage());
+            throw new ProductServiceClientException(
+                    "Failed to fetch SKU from product-service", ex
+            );
         }
 
-        // Fallback snapshot if product service call fails or is unavailable
-        return SkuClientResponse.builder()
-                .id(skuId)
-                .skuCode("SKU-" + skuId.toString().substring(0, 8).toUpperCase())
-                .productName("Item " + skuId.toString().substring(0, 8))
-                .price(new BigDecimal("1850.00"))
-                .build();
     }
 }
