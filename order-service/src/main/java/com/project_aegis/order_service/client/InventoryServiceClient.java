@@ -5,6 +5,7 @@ import com.project_aegis.order_service.client.dto.StockDeductClientRequest;
 import com.project_aegis.order_service.client.dto.StockReleaseClientRequest;
 import com.project_aegis.order_service.client.dto.StockReservationClientRequest;
 import com.project_aegis.order_service.config.InternalApiProperties;
+import com.project_aegis.order_service.exception.StockReservationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -45,6 +46,9 @@ public class InventoryServiceClient {
                     request.getOrderId(),
                     ex.getMessage()
             );
+            throw new StockReservationException(
+                    "Failed to reserve stock for orderId: " + request.getOrderId() , ex
+            );
         }
     }
 
@@ -64,6 +68,9 @@ public class InventoryServiceClient {
                     "Failed to call inventory service to release stock for orderId: {}: {}",
                     request.getOrderId(),
                     ex.getMessage()
+            );
+            throw new StockReservationException(
+                    "Failed to release stock for orderId: " + request.getOrderId() ,ex
             );
         }
     }
@@ -87,6 +94,9 @@ public class InventoryServiceClient {
                     "Failed to call inventory service to decrement stock for orderId: {}: {}",
                     request.getOrderId(),
                     ex.getMessage()
+            );
+            throw new StockReservationException(
+                    "Failed to decrement stock for orderId: " + request.getOrderId() , ex
             );
         }
     }

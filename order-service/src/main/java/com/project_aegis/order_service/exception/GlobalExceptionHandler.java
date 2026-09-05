@@ -44,7 +44,15 @@ public class GlobalExceptionHandler {
                         .message(ex.getMessage())
                         .build());
     }
-
+    @ExceptionHandler(StockReservationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStockReservation(StockReservationException ex) {
+        log.warn("Stock reservation failed : {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.<Void>builder()
+                        .success(false)
+                        .message(ex.getMessage())
+                        .build());
+    }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
         String errors = ex.getBindingResult().getFieldErrors().stream()
