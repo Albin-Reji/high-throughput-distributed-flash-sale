@@ -100,31 +100,68 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderBuildResult.order();
         Order savedOrder = orderPersistenceService.saveInitOrder(order);
 
-
-         // if reserve stock throe an exception ,
-         // OrderStatus={@link OrderStatus#FAILED} and return error response to client
-        try{
+        boolean stockReserved = false;
+        // If stock reservation or order confirmation fails,
+        // OrderStatus={@link OrderStatus#FAILED}, compensate stock if reserved, and return error response to client
+        try {
             reserveStock(
                     savedOrder,
                     customerId,
                     orderBuildResult.reservationItems()
             );
+            stockReserved = true;
+
+            // if reserveStock() is success then confirm the order
+            Order confirmOrder = orderPersistenceService.confirmOrder(
+                    savedOrder,
+                    customerId,
+                    idempotencyKey
+            );
+
+            return orderMapper.toCreateResponse(confirmOrder);
+
         } catch (Exception e) {
-            orderPersistenceService.failOrder(savedOrder);
             log.error(
-                    "Stock reservation failed for orderId: {}. Failed order.",
+                    "Failed to complete order creation for orderId: {}. Initiating rollback/compensation.",
                     savedOrder.getId(),
                     e
             );
-            throw new InvalidOperationException(
-                    "Stock reservation failed. Order has been marked as FAILED."
-            );
+
+            if (stockReserved) {
+                // if stock is reserved then release the stock
+                try {
+                    releaseStock(savedOrder.getId());
+
+                } catch (Exception ex) {
+                    log.error(
+                            "Failed to release stock for orderId: {}. Manual intervention required.",
+                            savedOrder.getId(),
+                            ex
+                    );
+                }
+
+            }
+            try {
+                orderPersistenceService.failOrder(savedOrder);
+
+            } catch (Exception ex) {
+                log.error(
+                        "CRITICAL: Failed to mark order as FAILED for orderId: {}. Manual intervention required.",
+                        savedOrder.getId(),
+                        ex
+                );
+            }
+
+            if (e instanceof InvalidOperationException invalidOperationException) {
+                throw invalidOperationException;
+            }
+            String errorMessage = stockReserved
+                    ? "Order confirmation failed. Stock reservation compensated and order marked as FAILED."
+                    : "Stock reservation failed. Order has been marked as FAILED.";
+            throw new InvalidOperationException(errorMessage, e);
 
         }
-        // if reserveStock() is success then confirm the order
-        Order confirmOrder=orderPersistenceService.confirmOrder(savedOrder, customerId, idempotencyKey);
 
-        return orderMapper.toCreateResponse(confirmOrder);
     }
 
     @Override
