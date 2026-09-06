@@ -452,13 +452,35 @@ class OrderServiceImplTest {
             when(orderPersistenceService.saveInitOrder(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
             doThrow(new RuntimeException("Stock reservation failed"))
                     .when(inventoryServiceClient).reserveStock(any());
+
+            assertThatThrownBy(() -> orderService.createOrder(customerId, idempotencyKey, createRequest, bearerToken))
+                    .isInstanceOf(InvalidOperationException.class)
+                    .hasMessageContaining("Stock reservation failed. Order has been marked as FAILED.");
+
+            verify(orderPersistenceService).failOrder(any(Order.class));
+            verify(inventoryServiceClient, never()).releaseStock(any());
+            verify(orderPersistenceService, never()).confirmOrder(any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("should release stock and call failOrder when confirmOrder throws exception")
+        void shouldReleaseStockAndFailOrderWhenConfirmOrderFails() {
+            when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
+                    .thenReturn(Optional.empty());
+            when(userServiceClient.getAddress(addressId, bearerToken)).thenReturn(addressResponse);
+            when(productServiceClient.getSku(skuId, bearerToken)).thenReturn(skuResponse);
+            when(orderPersistenceService.saveInitOrder(any(Order.class))).thenReturn(order);
+            doNothing().when(inventoryServiceClient).reserveStock(any());
             when(orderPersistenceService.confirmOrder(any(Order.class), eq(customerId), eq(idempotencyKey)))
-                    .thenReturn(order);
-            when(orderMapper.toCreateResponse(order)).thenReturn(createOrderResponse);
+                    .thenThrow(new IllegalStateException("Failed to serialize outbox event payload"));
 
-            CreateOrderResponse result = orderService.createOrder(customerId, idempotencyKey, createRequest, bearerToken);
+            assertThatThrownBy(() -> orderService.createOrder(customerId, idempotencyKey, createRequest, bearerToken))
+                    .isInstanceOf(InvalidOperationException.class)
+                    .hasMessageContaining("Order confirmation failed. Stock reservation compensated and order marked as FAILED.");
 
-            assertThat(result).isNotNull();
+            verify(orderPersistenceService).saveInitOrder(any(Order.class));
+            verify(inventoryServiceClient).reserveStock(any());
+            verify(inventoryServiceClient).releaseStock(any());
             verify(orderPersistenceService).failOrder(any(Order.class));
         }
 
