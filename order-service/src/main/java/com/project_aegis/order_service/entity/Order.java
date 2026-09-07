@@ -69,6 +69,10 @@ public class Order {
     @Column(name = "carrier", length = 100)
     private String carrier;
 
+    @Version
+    @Column(name = "version")
+    private Integer version;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
