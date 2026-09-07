@@ -66,6 +66,62 @@ public class OrderServiceImpl implements OrderService {
     private final ObjectMapper objectMapper;
     private final OrderPersistenceService orderPersistenceService;
 
+/**
+ * Coordinates the order creation workflow using synchronous Saga-style
+ * orchestration.
+ *
+ * <p>The workflow consists of the following steps:</p>
+ *
+ * <ol>
+ *     <li>
+ *         Checks the idempotency key and returns the previously cached
+ *         response if the request has already been processed.
+ *     </li>
+ *     <li>
+ *         Retrieves and validates the customer's shipping address from
+ *         the User Service.
+ *     </li>
+ *     <li>
+ *         Builds and persists the order with {@link OrderStatus#PENDING} status.
+ *     </li>
+ *     <li>
+ *         Reserves the required inventory through the Inventory Service.
+ *     </li>
+ *     <li>
+ *         If inventory reservation succeeds, transitions the order to
+ *         {@link OrderStatus#AWAITING_PAYMENT} and persists the corresponding
+ *         outbox event and idempotency record atomically.
+ *     </li>
+ *     <li>
+ *         If a failure occurs after inventory has been reserved, executes
+ *         the compensating transaction by releasing the reserved inventory.
+ *     </li>
+ *     <li>
+ *         Marks the order as {@link OrderStatus#FAILED} when the workflow
+ *         cannot be completed.
+ *     </li>
+ * </ol>
+ *
+ * <p>
+ * <strong>Important:</strong>
+ * This is a synchronous Saga-style orchestration. The Order Service
+ * coordinates operations across service boundaries, so a database
+ * transaction cannot roll back changes already committed by the
+ * Inventory Service. Explicit compensating transactions are therefore
+ * required to maintain business consistency.
+ * </p>
+ *
+ * @param customerId    the unique identifier of the customer creating the order
+ * @param idempotencyKey the idempotency key used to safely handle duplicate requests
+ * @param request       the order creation request containing items and shipping details
+ * @param bearerToken   the customer's bearer token used for downstream service calls
+ *
+ * @return the created order response when the order workflow completes successfully
+ *
+ * @throws InvalidOperationException if inventory reservation, order confirmation,
+ *                                   or compensation-related workflow processing fails
+ */
+
     @Override
     public CreateOrderResponse createOrder(
             UUID customerId,
