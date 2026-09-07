@@ -82,7 +82,8 @@ public class InternalOrderServiceImpl implements InternalOrderService {
         String configuredKey = internalApiProperties.getOrderKey();
 
         if (!StringUtils.hasText(configuredKey)) {
-            return;
+            log.error("Internal API key is not configured — rejecting all internal calls");
+            throw new IllegalStateException("Internal API key is not configured");
         }
 
         if (!StringUtils.hasText(apiKey) || !configuredKey.equals(apiKey)) {

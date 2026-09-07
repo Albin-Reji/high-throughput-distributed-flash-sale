@@ -101,13 +101,13 @@ class InternalOrderServiceImplTest {
                     .amountPaid(BigDecimal.valueOf(500))
                     .build();
 
-            when(internalApiProperties.getOrderKey()).thenReturn("");
+            when(internalApiProperties.getOrderKey()).thenReturn("test-internal-key");
             when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
             when(orderRepository.save(order)).thenReturn(order);
             when(orderMapper.toSummaryResponse(order)).thenReturn(summaryResponse);
             when(objectMapper.writeValueAsString(request)).thenReturn("{}");
 
-            OrderSummaryResponse result = internalOrderService.processPayment(orderId, request, "");
+            OrderSummaryResponse result = internalOrderService.processPayment(orderId, request, "test-internal-key");
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
             verify(inventoryServiceClient).decrementStock(any());
@@ -124,12 +124,12 @@ class InternalOrderServiceImplTest {
                     .amountPaid(BigDecimal.valueOf(500))
                     .build();
 
-            when(internalApiProperties.getOrderKey()).thenReturn("");
+            when(internalApiProperties.getOrderKey()).thenReturn("test-internal-key");
             when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
             when(orderRepository.save(order)).thenReturn(order);
             when(orderMapper.toSummaryResponse(order)).thenReturn(summaryResponse);
 
-            internalOrderService.processPayment(orderId, request, "");
+            internalOrderService.processPayment(orderId, request, "test-internal-key");
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.FAILED);
             verify(inventoryServiceClient, never()).decrementStock(any());
@@ -153,6 +153,26 @@ class InternalOrderServiceImplTest {
         }
 
         @Test
+        @DisplayName("should throw InvalidOperationException when caller API key is empty or null")
+        void shouldThrowOnMissingCallerApiKey() {
+            PaymentNotificationRequest request = PaymentNotificationRequest.builder()
+                    .transactionId("txn-003-missing")
+                    .status("SUCCESS")
+                    .amountPaid(BigDecimal.valueOf(500))
+                    .build();
+
+            when(internalApiProperties.getOrderKey()).thenReturn("correct-key");
+
+            assertThatThrownBy(() -> internalOrderService.processPayment(orderId, request, ""))
+                    .isInstanceOf(InvalidOperationException.class)
+                    .hasMessageContaining("Unauthorized");
+
+            assertThatThrownBy(() -> internalOrderService.processPayment(orderId, request, null))
+                    .isInstanceOf(InvalidOperationException.class)
+                    .hasMessageContaining("Unauthorized");
+        }
+
+        @Test
         @DisplayName("should throw ResourceNotFoundException when order not found")
         void shouldThrowWhenOrderNotFound() {
             PaymentNotificationRequest request = PaymentNotificationRequest.builder()
@@ -161,17 +181,17 @@ class InternalOrderServiceImplTest {
                     .amountPaid(BigDecimal.valueOf(500))
                     .build();
 
-            when(internalApiProperties.getOrderKey()).thenReturn("");
+            when(internalApiProperties.getOrderKey()).thenReturn("test-internal-key");
             when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> internalOrderService.processPayment(orderId, request, ""))
+            assertThatThrownBy(() -> internalOrderService.processPayment(orderId, request, "test-internal-key"))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining(orderId.toString());
         }
 
         @Test
-        @DisplayName("should allow request when API key is not configured (empty)")
-        void shouldAllowWhenNoApiKeyConfigured() throws Exception {
+        @DisplayName("should throw IllegalStateException when internal API key is not configured (empty)")
+        void shouldThrowWhenApiKeyIsEmpty() {
             PaymentNotificationRequest request = PaymentNotificationRequest.builder()
                     .transactionId("txn-005")
                     .status("SUCCESS")
@@ -179,15 +199,26 @@ class InternalOrderServiceImplTest {
                     .build();
 
             when(internalApiProperties.getOrderKey()).thenReturn("");
-            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-            when(orderRepository.save(order)).thenReturn(order);
-            when(orderMapper.toSummaryResponse(order)).thenReturn(summaryResponse);
-            when(objectMapper.writeValueAsString(request)).thenReturn("{}");
 
-            OrderSummaryResponse result = internalOrderService.processPayment(orderId, request, null);
+            assertThatThrownBy(() -> internalOrderService.processPayment(orderId, request, "any-key"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Internal API key is not configured");
+        }
 
-            assertThat(result).isNotNull();
-            assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
+        @Test
+        @DisplayName("should throw IllegalStateException when internal API key is not configured (null)")
+        void shouldThrowWhenApiKeyIsNull() {
+            PaymentNotificationRequest request = PaymentNotificationRequest.builder()
+                    .transactionId("txn-006")
+                    .status("SUCCESS")
+                    .amountPaid(BigDecimal.valueOf(500))
+                    .build();
+
+            when(internalApiProperties.getOrderKey()).thenReturn(null);
+
+            assertThatThrownBy(() -> internalOrderService.processPayment(orderId, request, "any-key"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Internal API key is not configured");
         }
     }
 }
