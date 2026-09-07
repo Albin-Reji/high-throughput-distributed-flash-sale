@@ -10,6 +10,9 @@ import java.util.UUID;
 @Entity
 @Table(
         name = "idempotency_records",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_idempotency_key_customer", columnNames = {"idempotency_key", "customer_id"})
+        },
         indexes = {
                 @Index(name = "idx_idempotency_records_customer_id", columnList = "customer_id")
         }
