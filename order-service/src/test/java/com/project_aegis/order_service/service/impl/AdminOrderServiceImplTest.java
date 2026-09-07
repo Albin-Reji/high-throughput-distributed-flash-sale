@@ -6,6 +6,7 @@ import com.project_aegis.order_service.dto.response.PageResponse;
 import com.project_aegis.order_service.entity.Order;
 import com.project_aegis.order_service.entity.OrderStatus;
 import com.project_aegis.order_service.entity.OrderType;
+import com.project_aegis.order_service.exception.InvalidStateTransitionException;
 import com.project_aegis.order_service.exception.ResourceNotFoundException;
 import com.project_aegis.order_service.mapper.OrderMapper;
 import com.project_aegis.order_service.repository.OrderRepository;
@@ -168,6 +169,7 @@ class AdminOrderServiceImplTest {
         @Test
         @DisplayName("should update status with tracking number and carrier")
         void shouldUpdateStatusWithTrackingInfo() throws Exception {
+            order.setStatus(OrderStatus.PROCESSING);
             AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
                     .status(OrderStatus.SHIPPED)
                     .trackingNumber("TRK-12345")
@@ -198,6 +200,7 @@ class AdminOrderServiceImplTest {
         @Test
         @DisplayName("should not set tracking when tracking number is blank")
         void shouldNotSetBlankTracking() throws Exception {
+            order.setStatus(OrderStatus.CONFIRMED);
             AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
                     .status(OrderStatus.PROCESSING)
                     .trackingNumber("")
@@ -216,6 +219,256 @@ class AdminOrderServiceImplTest {
         }
 
         @Test
+        @DisplayName("should allow same-status update for SHIPPED when updating tracking details")
+        void shouldAllowSameStatusUpdateForShipped() throws Exception {
+            order.setStatus(OrderStatus.SHIPPED);
+            order.setTrackingNumber("OLD-TRK");
+            order.setCarrier("DHL");
+
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(OrderStatus.SHIPPED)
+                    .trackingNumber("NEW-TRK")
+                    .carrier("FedEx")
+                    .build();
+
+            OrderSummaryResponse expectedResponse = OrderSummaryResponse.builder()
+                    .orderId(orderId)
+                    .orderNumber("ORD-2026-ABCD1234")
+                    .status(OrderStatus.SHIPPED)
+                    .totalAmount(BigDecimal.valueOf(500))
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+            when(orderRepository.save(order)).thenReturn(order);
+            when(orderMapper.toSummaryResponse(order)).thenReturn(expectedResponse);
+            when(objectMapper.writeValueAsString(request)).thenReturn("{}");
+
+            OrderSummaryResponse result = adminOrderService.updateOrderStatus(orderId, request);
+
+            assertThat(result.getStatus()).isEqualTo(OrderStatus.SHIPPED);
+            assertThat(order.getTrackingNumber()).isEqualTo("NEW-TRK");
+            assertThat(order.getCarrier()).isEqualTo("FedEx");
+        }
+
+        @Test
+        @DisplayName("should transition from AWAITING_PAYMENT to PAID")
+        void shouldTransitionFromAwaitingPaymentToPaid() {
+            order.setStatus(OrderStatus.AWAITING_PAYMENT);
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(OrderStatus.PAID)
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+            when(orderRepository.save(order)).thenReturn(order);
+            when(orderMapper.toSummaryResponse(order)).thenReturn(summaryResponse);
+
+            adminOrderService.updateOrderStatus(orderId, request);
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
+        }
+
+        @Test
+        @DisplayName("should transition from PAID to CONFIRMED")
+        void shouldTransitionFromPaidToConfirmed() {
+            order.setStatus(OrderStatus.PAID);
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(OrderStatus.CONFIRMED)
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+            when(orderRepository.save(order)).thenReturn(order);
+            when(orderMapper.toSummaryResponse(order)).thenReturn(summaryResponse);
+
+            adminOrderService.updateOrderStatus(orderId, request);
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        }
+
+        @Test
+        @DisplayName("should transition from CONFIRMED to PROCESSING")
+        void shouldTransitionFromConfirmedToProcessing() {
+            order.setStatus(OrderStatus.CONFIRMED);
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(OrderStatus.PROCESSING)
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+            when(orderRepository.save(order)).thenReturn(order);
+            when(orderMapper.toSummaryResponse(order)).thenReturn(summaryResponse);
+
+            adminOrderService.updateOrderStatus(orderId, request);
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.PROCESSING);
+        }
+
+        @Test
+        @DisplayName("should transition from PROCESSING to SHIPPED")
+        void shouldTransitionFromProcessingToShipped() {
+            order.setStatus(OrderStatus.PROCESSING);
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(OrderStatus.SHIPPED)
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+            when(orderRepository.save(order)).thenReturn(order);
+            when(orderMapper.toSummaryResponse(order)).thenReturn(summaryResponse);
+
+            adminOrderService.updateOrderStatus(orderId, request);
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.SHIPPED);
+        }
+
+        @Test
+        @DisplayName("should transition from SHIPPED to DELIVERED")
+        void shouldTransitionFromShippedToDelivered() {
+            order.setStatus(OrderStatus.SHIPPED);
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(OrderStatus.DELIVERED)
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+            when(orderRepository.save(order)).thenReturn(order);
+            when(orderMapper.toSummaryResponse(order)).thenReturn(summaryResponse);
+
+            adminOrderService.updateOrderStatus(orderId, request);
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.DELIVERED);
+        }
+
+        @Test
+        @DisplayName("should allow cancellation from AWAITING_PAYMENT, PAID, CONFIRMED, and PROCESSING")
+        void shouldAllowCancellationFromPreFulfillmentStates() {
+            for (OrderStatus preFulfillmentStatus : List.of(
+                    OrderStatus.AWAITING_PAYMENT,
+                    OrderStatus.PAID,
+                    OrderStatus.CONFIRMED,
+                    OrderStatus.PROCESSING)) {
+
+                order.setStatus(preFulfillmentStatus);
+                AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                        .status(OrderStatus.CANCELLED)
+                        .build();
+
+                when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+                when(orderRepository.save(order)).thenReturn(order);
+                when(orderMapper.toSummaryResponse(order)).thenReturn(summaryResponse);
+
+                adminOrderService.updateOrderStatus(orderId, request);
+
+                assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+            }
+        }
+
+        @Test
+        @DisplayName("should throw InvalidStateTransitionException when jumping states (PAID to SHIPPED)")
+        void shouldThrowOnSkippingStates() {
+            order.setStatus(OrderStatus.PAID);
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(OrderStatus.SHIPPED)
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+            assertThatThrownBy(() -> adminOrderService.updateOrderStatus(orderId, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .hasMessageContaining("PAID")
+                    .hasMessageContaining("SHIPPED");
+        }
+
+        @Test
+        @DisplayName("should throw InvalidStateTransitionException on backward transition (DELIVERED to PENDING)")
+        void shouldThrowOnBackwardTransitionFromDelivered() {
+            order.setStatus(OrderStatus.DELIVERED);
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(OrderStatus.PENDING)
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+            assertThatThrownBy(() -> adminOrderService.updateOrderStatus(orderId, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .hasMessageContaining("DELIVERED")
+                    .hasMessageContaining("PENDING");
+        }
+
+        @Test
+        @DisplayName("should throw InvalidStateTransitionException on transition from terminal CANCELLED to SHIPPED")
+        void shouldThrowOnTransitionFromCancelled() {
+            order.setStatus(OrderStatus.CANCELLED);
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(OrderStatus.SHIPPED)
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+            assertThatThrownBy(() -> adminOrderService.updateOrderStatus(orderId, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .hasMessageContaining("CANCELLED")
+                    .hasMessageContaining("SHIPPED");
+        }
+
+        @Test
+        @DisplayName("should throw InvalidStateTransitionException on transition from terminal FAILED state")
+        void shouldThrowOnTransitionFromFailed() {
+            order.setStatus(OrderStatus.FAILED);
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(OrderStatus.PAID)
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+            assertThatThrownBy(() -> adminOrderService.updateOrderStatus(orderId, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .hasMessageContaining("FAILED");
+        }
+
+        @Test
+        @DisplayName("should throw InvalidStateTransitionException when cancelling a SHIPPED order")
+        void shouldThrowWhenCancellingShippedOrder() {
+            order.setStatus(OrderStatus.SHIPPED);
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(OrderStatus.CANCELLED)
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+            assertThatThrownBy(() -> adminOrderService.updateOrderStatus(orderId, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .hasMessageContaining("SHIPPED")
+                    .hasMessageContaining("CANCELLED");
+        }
+
+        @Test
+        @DisplayName("should throw InvalidStateTransitionException on same-status transition for non-updatable states")
+        void shouldThrowOnSameStatusTransitionForDelivered() {
+            order.setStatus(OrderStatus.DELIVERED);
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(OrderStatus.DELIVERED)
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+            assertThatThrownBy(() -> adminOrderService.updateOrderStatus(orderId, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .hasMessageContaining("DELIVERED");
+        }
+
+        @Test
+        @DisplayName("should throw InvalidStateTransitionException when target status is null")
+        void shouldThrowWhenTargetStatusIsNull() {
+            order.setStatus(OrderStatus.PAID);
+            AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
+                    .status(null)
+                    .build();
+
+            when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+            assertThatThrownBy(() -> adminOrderService.updateOrderStatus(orderId, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .hasMessageContaining("must not be null");
+        }
+
+        @Test
         @DisplayName("should throw ResourceNotFoundException when order not found")
         void shouldThrowWhenOrderNotFound() {
             AdminOrderStatusUpdateRequest request = AdminOrderStatusUpdateRequest.builder()
@@ -230,3 +483,4 @@ class AdminOrderServiceImplTest {
         }
     }
 }
+

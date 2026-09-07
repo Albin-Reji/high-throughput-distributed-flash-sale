@@ -7,6 +7,7 @@ import com.project_aegis.order_service.entity.Order;
 import com.project_aegis.order_service.entity.OrderStatus;
 import com.project_aegis.order_service.entity.OutboxEvent;
 import com.project_aegis.order_service.entity.OutboxStatus;
+import com.project_aegis.order_service.exception.InvalidStateTransitionException;
 import com.project_aegis.order_service.exception.ResourceNotFoundException;
 import com.project_aegis.order_service.mapper.OrderMapper;
 import com.project_aegis.order_service.repository.OrderRepository;
@@ -20,12 +21,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminOrderServiceImpl implements AdminOrderService {
+
+    private static final Map<OrderStatus, Set<OrderStatus>> ALLOWED_TRANSITIONS = Map.of(
+            OrderStatus.AWAITING_PAYMENT, Set.of(OrderStatus.PAID, OrderStatus.CANCELLED),
+            OrderStatus.PAID, Set.of(OrderStatus.CONFIRMED, OrderStatus.CANCELLED),
+            OrderStatus.CONFIRMED, Set.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED),
+            OrderStatus.PROCESSING, Set.of(OrderStatus.SHIPPED, OrderStatus.CANCELLED),
+            OrderStatus.SHIPPED, Set.of(OrderStatus.DELIVERED)
+    );
 
     private final OrderRepository orderRepository;
     private final OutboxEventRepository outboxEventRepository;
@@ -59,6 +70,8 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
 
+        validateStateTransition(order.getStatus(), request.getStatus());
+
         order.setStatus(request.getStatus());
 
         if (request.getTrackingNumber() != null && !request.getTrackingNumber().isBlank()) {
@@ -90,4 +103,24 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
         return orderMapper.toSummaryResponse(updatedOrder);
     }
+
+    private void validateStateTransition(OrderStatus currentStatus, OrderStatus targetStatus) {
+        if (currentStatus == null || targetStatus == null) {
+            throw new InvalidStateTransitionException("Current and target order statuses must not be null");
+        }
+
+        if (currentStatus == targetStatus) {
+            if (currentStatus == OrderStatus.PROCESSING || currentStatus == OrderStatus.SHIPPED) {
+                return;
+            }
+            throw new InvalidStateTransitionException(currentStatus, targetStatus);
+        }
+
+        Set<OrderStatus> allowed = ALLOWED_TRANSITIONS.get(currentStatus);
+        if (allowed == null || !allowed.contains(targetStatus)) {
+            log.warn("Invalid state transition attempted: {} -> {}", currentStatus, targetStatus);
+            throw new InvalidStateTransitionException(currentStatus, targetStatus);
+        }
+    }
 }
+
