@@ -1,6 +1,10 @@
 spring:
   application:
     name: inventory-service
+  # enable virtual threads for better performance
+  threads:
+    virtual:
+      enabled: true
 
   profiles:
     active: ${SPRING_PROFILE_ACTIVE:dev}
