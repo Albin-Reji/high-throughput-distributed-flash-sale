@@ -387,6 +387,7 @@ class OrderServiceImplTest {
             assertThat(result).isEqualTo(createOrderResponse);
             assertThat(result.getOrderNumber()).isEqualTo("ORD-2026-TEST1234");
             verify(userServiceClient, never()).getAddress(any(), any());
+            verify(productServiceClient, never()).getSkusBatch(any(), any());
             verify(productServiceClient, never()).getSku(any(), any());
             verify(orderPersistenceService, never()).saveInitOrder(any());
             verify(inventoryServiceClient, never()).reserveStock(any());
@@ -419,12 +420,12 @@ class OrderServiceImplTest {
         }
 
         @Test
-        @DisplayName("should successfully create order and reserve stock")
+        @DisplayName("should successfully create order and reserve stock using batch SKU API")
         void shouldCreateOrderSuccessfully() {
             when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
                     .thenReturn(Optional.empty());
             when(userServiceClient.getAddress(addressId, bearerToken)).thenReturn(addressResponse);
-            when(productServiceClient.getSku(skuId, bearerToken)).thenReturn(skuResponse);
+            when(productServiceClient.getSkusBatch(List.of(skuId), bearerToken)).thenReturn(List.of(skuResponse));
             when(orderPersistenceService.saveInitOrder(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
             doNothing().when(inventoryServiceClient).reserveStock(any());
             when(orderPersistenceService.confirmOrder(any(Order.class), eq(customerId), eq(idempotencyKey)))
@@ -436,10 +437,75 @@ class OrderServiceImplTest {
             assertThat(result).isNotNull();
             assertThat(result.getOrderId()).isEqualTo(orderId);
             verify(userServiceClient).getAddress(addressId, bearerToken);
-            verify(productServiceClient).getSku(skuId, bearerToken);
+            verify(productServiceClient).getSkusBatch(List.of(skuId), bearerToken);
+            verify(productServiceClient, never()).getSku(any(), any());
             verify(orderPersistenceService).saveInitOrder(any(Order.class));
             verify(inventoryServiceClient).reserveStock(any());
             verify(orderPersistenceService).confirmOrder(any(Order.class), eq(customerId), eq(idempotencyKey));
+        }
+
+        @Test
+        @DisplayName("should reduce N+1 HTTP calls to 1 batch call for multi-item order")
+        void shouldReduceNPlusOneCallsToSingleBatchCallForMultiItemOrder() {
+            UUID skuId2 = UUID.randomUUID();
+            UUID skuId3 = UUID.randomUUID();
+
+            OrderItemRequest item1 = OrderItemRequest.builder().skuId(skuId).quantity(2).build();
+            OrderItemRequest item2 = OrderItemRequest.builder().skuId(skuId2).quantity(1).build();
+            OrderItemRequest item3 = OrderItemRequest.builder().skuId(skuId3).quantity(3).build();
+
+            CreateOrderRequest multiItemRequest = CreateOrderRequest.builder()
+                    .shippingAddressId(addressId)
+                    .items(List.of(item1, item2, item3))
+                    .build();
+
+            SkuClientResponse skuResp2 = SkuClientResponse.builder()
+                    .id(skuId2)
+                    .skuCode("SKU-TEST-002")
+                    .productName("Product 2")
+                    .price(new BigDecimal("500.00"))
+                    .build();
+
+            SkuClientResponse skuResp3 = SkuClientResponse.builder()
+                    .id(skuId3)
+                    .skuCode("SKU-TEST-003")
+                    .productName("Product 3")
+                    .price(new BigDecimal("250.00"))
+                    .build();
+
+            when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
+                    .thenReturn(Optional.empty());
+            when(userServiceClient.getAddress(addressId, bearerToken)).thenReturn(addressResponse);
+            when(productServiceClient.getSkusBatch(List.of(skuId, skuId2, skuId3), bearerToken))
+                    .thenReturn(List.of(skuResponse, skuResp2, skuResp3));
+            when(orderPersistenceService.saveInitOrder(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+            doNothing().when(inventoryServiceClient).reserveStock(any());
+            when(orderPersistenceService.confirmOrder(any(Order.class), eq(customerId), eq(idempotencyKey)))
+                    .thenReturn(order);
+            when(orderMapper.toCreateResponse(order)).thenReturn(createOrderResponse);
+
+            CreateOrderResponse result = orderService.createOrder(customerId, idempotencyKey, multiItemRequest, bearerToken);
+
+            assertThat(result).isNotNull();
+            // Verify single batch call with all SKU IDs instead of 3 sequential getSku calls
+            verify(productServiceClient, times(1)).getSkusBatch(List.of(skuId, skuId2, skuId3), bearerToken);
+            verify(productServiceClient, never()).getSku(any(), any());
+        }
+
+        @Test
+        @DisplayName("should throw ResourceNotFoundException when SKU is missing from batch response")
+        void shouldThrowWhenSkuMissingFromBatchResponse() {
+            when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
+                    .thenReturn(Optional.empty());
+            when(userServiceClient.getAddress(addressId, bearerToken)).thenReturn(addressResponse);
+            when(productServiceClient.getSkusBatch(List.of(skuId), bearerToken)).thenReturn(List.of());
+
+            assertThatThrownBy(() -> orderService.createOrder(customerId, idempotencyKey, createRequest, bearerToken))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("SKU not found with ID: " + skuId);
+
+            verify(orderPersistenceService, never()).saveInitOrder(any());
+            verify(inventoryServiceClient, never()).reserveStock(any());
         }
 
         @Test
@@ -448,7 +514,7 @@ class OrderServiceImplTest {
             when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
                     .thenReturn(Optional.empty());
             when(userServiceClient.getAddress(addressId, bearerToken)).thenReturn(addressResponse);
-            when(productServiceClient.getSku(skuId, bearerToken)).thenReturn(skuResponse);
+            when(productServiceClient.getSkusBatch(List.of(skuId), bearerToken)).thenReturn(List.of(skuResponse));
             when(orderPersistenceService.saveInitOrder(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
             doThrow(new RuntimeException("Stock reservation failed"))
                     .when(inventoryServiceClient).reserveStock(any());
@@ -468,7 +534,7 @@ class OrderServiceImplTest {
             when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
                     .thenReturn(Optional.empty());
             when(userServiceClient.getAddress(addressId, bearerToken)).thenReturn(addressResponse);
-            when(productServiceClient.getSku(skuId, bearerToken)).thenReturn(skuResponse);
+            when(productServiceClient.getSkusBatch(List.of(skuId), bearerToken)).thenReturn(List.of(skuResponse));
             when(orderPersistenceService.saveInitOrder(any(Order.class))).thenReturn(order);
             doNothing().when(inventoryServiceClient).reserveStock(any());
             when(orderPersistenceService.confirmOrder(any(Order.class), eq(customerId), eq(idempotencyKey)))
@@ -496,6 +562,7 @@ class OrderServiceImplTest {
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Address not found");
 
+            verify(productServiceClient, never()).getSkusBatch(any(), any());
             verify(productServiceClient, never()).getSku(any(), any());
             verify(orderPersistenceService, never()).saveInitOrder(any());
             verify(inventoryServiceClient, never()).reserveStock(any());
@@ -507,7 +574,7 @@ class OrderServiceImplTest {
             when(idempotencyRecordRepository.findByIdempotencyKeyAndCustomerId(idempotencyKey, customerId))
                     .thenReturn(Optional.empty());
             when(userServiceClient.getAddress(addressId, bearerToken)).thenReturn(addressResponse);
-            when(productServiceClient.getSku(skuId, bearerToken))
+            when(productServiceClient.getSkusBatch(List.of(skuId), bearerToken))
                     .thenThrow(new RuntimeException("Product catalog unavailable"));
 
             assertThatThrownBy(() -> orderService.createOrder(customerId, idempotencyKey, createRequest, bearerToken))

@@ -33,8 +33,12 @@ import java.time.Year;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -346,6 +350,16 @@ public class OrderServiceImpl implements OrderService {
             String bearerToken,
             String orderNumber
     ) {
+        List<UUID> skuIds = request.getItems().stream()
+                .map(OrderItemRequest::getSkuId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        List<SkuClientResponse> skuResponses = productServiceClient.getSkusBatch(skuIds, bearerToken);
+        Map<UUID, SkuClientResponse> skuMap = skuResponses.stream()
+                .collect(Collectors.toMap(SkuClientResponse::getId, Function.identity(), (existing, replacing) -> existing));
+
         List<OrderItem> orderItems = new ArrayList<>();
         List<ReservationItemClientRequest> reservationItems =
                 new ArrayList<>();
@@ -353,11 +367,10 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal subtotalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest itemRequest : request.getItems()) {
-            SkuClientResponse sku =
-                    productServiceClient.getSku(
-                            itemRequest.getSkuId(),
-                            bearerToken
-                    );
+            SkuClientResponse sku = skuMap.get(itemRequest.getSkuId());
+            if (sku == null) {
+                throw new ResourceNotFoundException("SKU not found with ID: " + itemRequest.getSkuId());
+            }
 
             BigDecimal unitPrice = resolveUnitPrice(sku);
             BigDecimal itemSubtotal =
