@@ -1,6 +1,10 @@
 spring:
   application:
     name: product-service
+  # enable virtual threads for better performance
+  threads:
+    virtual:
+      enabled: true
 
   profiles:
     active: dev

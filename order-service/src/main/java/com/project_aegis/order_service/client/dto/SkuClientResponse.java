@@ -20,4 +20,7 @@ public class SkuClientResponse {
     private String size;
     private BigDecimal price;
     private String productName;
+
+    public SkuClientResponse(UUID skuId, String unknownProduct, String unknown, BigDecimal zero) {
+    }
 }

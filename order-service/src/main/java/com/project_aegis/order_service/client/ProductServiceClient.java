@@ -1,6 +1,7 @@
 package com.project_aegis.order_service.client;
 
 import com.project_aegis.order_service.client.dto.SkuClientResponse;
+import com.project_aegis.order_service.exception.ProductServiceClientException;
 import com.project_aegis.order_service.exception.ResourceNotFoundException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
@@ -34,13 +35,18 @@ public class ProductServiceClient {
                 .retrieve()
                 .body(SkuClientResponse.class);
 
-        if (response != null) {
-            if (response.getProductName() == null || response.getProductName().isBlank()) {
-                response.setProductName("Product (" + (response.getSkuCode() != null ? response.getSkuCode() : skuId.toString().substring(0, 8)) + ")");
-            }
-            return response;
+        if (response == null) {
+            throw new ResourceNotFoundException("SKU not found with ID: " + skuId);
         }
 
-        throw new ResourceNotFoundException("SKU not found with ID: " + skuId);
+        if (response.getPrice() == null) {
+            throw new ProductServiceClientException("Product service returned no price for SKU: " + skuId);
+        }
+
+        if (response.getProductName() == null || response.getProductName().isBlank()) {
+            response.setProductName("Product (" + (response.getSkuCode() != null ? response.getSkuCode() : skuId.toString().substring(0, 8)) + ")");
+        }
+
+        return response;
     }
 }

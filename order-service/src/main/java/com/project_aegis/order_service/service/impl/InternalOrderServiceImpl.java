@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.UUID;
 
@@ -82,7 +82,8 @@ public class InternalOrderServiceImpl implements InternalOrderService {
         String configuredKey = internalApiProperties.getOrderKey();
 
         if (!StringUtils.hasText(configuredKey)) {
-            return;
+            log.error("Internal API key is not configured — rejecting all internal calls");
+            throw new IllegalStateException("Internal API key is not configured");
         }
 
         if (!StringUtils.hasText(apiKey) || !configuredKey.equals(apiKey)) {

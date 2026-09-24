@@ -27,42 +27,44 @@ public class RestClientConfig {
     @Value("${service.inventory.url:http://localhost:8083}")
     private String inventoryServiceUrl;
 
-    private ClientHttpRequestFactory createRequestFactory() {
+    @Bean
+    public ClientHttpRequestFactory clientHttpRequestFactory() {
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(CONNECT_TIMEOUT)
                 .build();
+
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(READ_TIMEOUT);
         return requestFactory;
     }
 
     @Bean("productRestClient")
-    public RestClient productRestClient() {
+    public RestClient productRestClient(ClientHttpRequestFactory clientHttpRequestFactory) {
         String url = productServiceUrl.trim();
         log.info("Product Service Url: [{}]", url);
         return RestClient.builder()
                 .baseUrl(url)
-                .requestFactory(createRequestFactory())
+                .requestFactory(clientHttpRequestFactory)
                 .build();
     }
 
     @Bean("userRestClient")
-    public RestClient userRestClient() {
+    public RestClient userRestClient(ClientHttpRequestFactory clientHttpRequestFactory) {
         String url = userServiceUrl.trim();
         log.info("User Service Url: [{}]", url);
         return RestClient.builder()
                 .baseUrl(url)
-                .requestFactory(createRequestFactory())
+                .requestFactory(clientHttpRequestFactory)
                 .build();
     }
 
     @Bean("inventoryRestClient")
-    public RestClient inventoryRestClient() {
+    public RestClient inventoryRestClient(ClientHttpRequestFactory clientHttpRequestFactory) {
         String url = inventoryServiceUrl.trim();
         log.info("Inventory Service Url: [{}]", url);
         return RestClient.builder()
                 .baseUrl(url)
-                .requestFactory(createRequestFactory())
+                .requestFactory(clientHttpRequestFactory)
                 .build();
     }
 }

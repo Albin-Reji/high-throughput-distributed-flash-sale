@@ -103,17 +103,22 @@ public class InternalInventoryService {
                 itemPrice = campaignSku.getFlashPrice();
             }
 
-            // Check availability
-            if (inventory.getAvailableQuantity() < itemReq.getQuantity()) {
+            int updatedRows = inventoryRepository.reserveStock(itemReq.getSkuId(), itemReq.getQuantity());
+            if(updatedRows == 0) {
+                int currentAvailableQuantity = inventoryRepository
+                        .findBySkuId(itemReq.getSkuId())
+                        .map(Inventory::getAvailableQuantity)
+                        .orElse(0);
+
+                log.warn("Insufficient stock for SKU {}: requested {}, available {}",
+                        itemReq.getSkuId(), itemReq.getQuantity(), currentAvailableQuantity);
+
                 throw new InsufficientStockException(
                         itemReq.getSkuId().toString(),
                         itemReq.getQuantity(),
-                        inventory.getAvailableQuantity());
+                        currentAvailableQuantity);
             }
 
-            // Reserve stock by decreasing available quantity
-            inventory.setAvailableQuantity(inventory.getAvailableQuantity() - itemReq.getQuantity());
-            inventoryRepository.save(inventory);
 
             StockReservation reservation = StockReservation.builder()
                     .orderId(request.getOrderId())

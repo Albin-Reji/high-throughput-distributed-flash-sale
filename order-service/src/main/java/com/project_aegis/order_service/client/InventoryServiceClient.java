@@ -1,4 +1,3 @@
-
 package com.project_aegis.order_service.client;
 
 import com.project_aegis.order_service.client.dto.StockDeductClientRequest;
