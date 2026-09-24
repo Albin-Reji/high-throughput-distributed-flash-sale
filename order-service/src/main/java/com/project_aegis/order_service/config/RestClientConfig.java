@@ -4,11 +4,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
+
+import java.net.http.HttpClient;
+import java.time.Duration;
 
 @Configuration
 @Slf4j
 public class RestClientConfig {
+
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
+    private static final Duration READ_TIMEOUT = Duration.ofSeconds(5);
 
     @Value("${service.product.url:http://localhost:8082}")
     private String productServiceUrl;
@@ -19,6 +27,14 @@ public class RestClientConfig {
     @Value("${service.inventory.url:http://localhost:8083}")
     private String inventoryServiceUrl;
 
+    private ClientHttpRequestFactory createRequestFactory() {
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(CONNECT_TIMEOUT)
+                .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(READ_TIMEOUT);
+        return requestFactory;
+    }
 
     @Bean("productRestClient")
     public RestClient productRestClient() {
@@ -26,6 +42,7 @@ public class RestClientConfig {
         log.info("Product Service Url: [{}]", url);
         return RestClient.builder()
                 .baseUrl(url)
+                .requestFactory(createRequestFactory())
                 .build();
     }
 
@@ -35,6 +52,7 @@ public class RestClientConfig {
         log.info("User Service Url: [{}]", url);
         return RestClient.builder()
                 .baseUrl(url)
+                .requestFactory(createRequestFactory())
                 .build();
     }
 
@@ -44,6 +62,7 @@ public class RestClientConfig {
         log.info("Inventory Service Url: [{}]", url);
         return RestClient.builder()
                 .baseUrl(url)
+                .requestFactory(createRequestFactory())
                 .build();
     }
 }

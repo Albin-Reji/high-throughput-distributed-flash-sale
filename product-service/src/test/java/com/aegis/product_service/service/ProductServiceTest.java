@@ -35,6 +35,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -555,6 +556,129 @@ class ProductServiceTest {
             SkuResponse result = productService.isSkuExist(skuId);
 
             assertThat(result).isNull();
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  getSkusBatch
+    // ──────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("getSkusBatch")
+    class GetSkusBatch {
+
+        @Test
+        @DisplayName("should return list of SkuResponses when SKUs exist")
+        void shouldReturnSkuResponsesWhenSkusExist() {
+            UUID skuId1 = UUID.randomUUID();
+            UUID skuId2 = UUID.randomUUID();
+
+            Product mockProduct = Product.builder()
+                    .id(UUID.randomUUID())
+                    .title("MacBook Pro 16")
+                    .build();
+
+            Sku sku1 = Sku.builder()
+                    .id(skuId1)
+                    .skuCode("MBP-16-SLV")
+                    .color("Silver")
+                    .size("16-inch")
+                    .price(BigDecimal.valueOf(2499.99))
+                    .product(mockProduct)
+                    .build();
+
+            Sku sku2 = Sku.builder()
+                    .id(skuId2)
+                    .skuCode("MBP-16-SPG")
+                    .color("Space Gray")
+                    .size("16-inch")
+                    .price(BigDecimal.valueOf(2499.99))
+                    .product(mockProduct)
+                    .build();
+
+            when(skuRepository.findAllByIdInWithProduct(anyCollection()))
+                    .thenReturn(List.of(sku1, sku2));
+
+            List<SkuResponse> results = productService.getSkusBatch(List.of(skuId1, skuId2));
+
+            assertThat(results).hasSize(2);
+
+            SkuResponse resp1 = results.get(0);
+            assertThat(resp1.getId()).isEqualTo(skuId1);
+            assertThat(resp1.getSkuCode()).isEqualTo("MBP-16-SLV");
+            assertThat(resp1.getColor()).isEqualTo("Silver");
+            assertThat(resp1.getSize()).isEqualTo("16-inch");
+            assertThat(resp1.getPrice()).isEqualByComparingTo(BigDecimal.valueOf(2499.99));
+            assertThat(resp1.getProductName()).isEqualTo("MacBook Pro 16");
+
+            SkuResponse resp2 = results.get(1);
+            assertThat(resp2.getId()).isEqualTo(skuId2);
+            assertThat(resp2.getSkuCode()).isEqualTo("MBP-16-SPG");
+            assertThat(resp2.getColor()).isEqualTo("Space Gray");
+            assertThat(resp2.getSize()).isEqualTo("16-inch");
+            assertThat(resp2.getPrice()).isEqualByComparingTo(BigDecimal.valueOf(2499.99));
+            assertThat(resp2.getProductName()).isEqualTo("MacBook Pro 16");
+
+            verify(skuRepository).findAllByIdInWithProduct(anyCollection());
+        }
+
+        @Test
+        @DisplayName("should return empty list when input is null")
+        void shouldReturnEmptyListWhenInputIsNull() {
+            List<SkuResponse> results = productService.getSkusBatch(null);
+
+            assertThat(results).isEmpty();
+            verifyNoInteractions(skuRepository);
+        }
+
+        @Test
+        @DisplayName("should return empty list when input is empty")
+        void shouldReturnEmptyListWhenInputIsEmpty() {
+            List<SkuResponse> results = productService.getSkusBatch(List.of());
+
+            assertThat(results).isEmpty();
+            verifyNoInteractions(skuRepository);
+        }
+
+        @Test
+        @DisplayName("should filter nulls and deduplicate SKU IDs")
+        void shouldFilterNullsAndDeduplicateIds() {
+            UUID skuId = UUID.randomUUID();
+            List<UUID> input = new ArrayList<>();
+            input.add(skuId);
+            input.add(skuId);
+            input.add(null);
+
+            when(skuRepository.findAllByIdInWithProduct(List.of(skuId)))
+                    .thenReturn(List.of());
+
+            List<SkuResponse> results = productService.getSkusBatch(input);
+
+            assertThat(results).isEmpty();
+            verify(skuRepository).findAllByIdInWithProduct(List.of(skuId));
+        }
+
+        @Test
+        @DisplayName("should handle SKU with null product safely")
+        void shouldHandleSkuWithNullProductSafely() {
+            UUID skuId = UUID.randomUUID();
+            Sku sku = Sku.builder()
+                    .id(skuId)
+                    .skuCode("ORPHAN-SKU")
+                    .color("Black")
+                    .size("Standard")
+                    .price(BigDecimal.valueOf(99.99))
+                    .product(null)
+                    .build();
+
+            when(skuRepository.findAllByIdInWithProduct(anyCollection()))
+                    .thenReturn(List.of(sku));
+
+            List<SkuResponse> results = productService.getSkusBatch(List.of(skuId));
+
+            assertThat(results).hasSize(1);
+            assertThat(results.get(0).getId()).isEqualTo(skuId);
+            assertThat(results.get(0).getProductName()).isNull();
         }
     }
 }
