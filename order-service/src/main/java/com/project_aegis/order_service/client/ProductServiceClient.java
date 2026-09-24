@@ -6,10 +6,14 @@ import com.project_aegis.order_service.exception.ResourceNotFoundException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -48,5 +52,39 @@ public class ProductServiceClient {
         }
 
         return response;
+    }
+
+    public List<SkuClientResponse> getSkusBatch(List<UUID> skuIds, String bearerToken) {
+        if (skuIds == null || skuIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        var requestSpec = productRestClient.post()
+                .uri("/api/v1/products/skus/batch")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(skuIds);
+
+        if (bearerToken != null && !bearerToken.isBlank()) {
+            requestSpec.header(HttpHeaders.AUTHORIZATION, bearerToken);
+        }
+
+        List<SkuClientResponse> responses = requestSpec
+                .retrieve()
+                .body(new ParameterizedTypeReference<List<SkuClientResponse>>() {});
+
+        if (responses == null) {
+            return Collections.emptyList();
+        }
+
+        for (SkuClientResponse response : responses) {
+            if (response.getPrice() == null) {
+                throw new ProductServiceClientException("Product service returned no price for SKU: " + response.getId());
+            }
+            if (response.getProductName() == null || response.getProductName().isBlank()) {
+                response.setProductName("Product (" + (response.getSkuCode() != null ? response.getSkuCode() : (response.getId() != null ? response.getId().toString().substring(0, 8) : "unknown")) + ")");
+            }
+        }
+
+        return responses;
     }
 }

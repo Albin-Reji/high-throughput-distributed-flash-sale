@@ -79,7 +79,7 @@ class InternalInventoryServiceTest {
         when(stockReservationRepository.findAllByOrderIdAndStatus(orderId, ReservationStatus.RESERVED))
                 .thenReturn(Collections.emptyList());
         when(inventoryRepository.findBySkuId(skuId)).thenReturn(Optional.of(inventory));
-        when(inventoryRepository.save(any(Inventory.class))).thenReturn(inventory);
+        when(inventoryRepository.reserveStock(skuId, 5)).thenReturn(1);
         when(stockReservationRepository.save(any(StockReservation.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -87,7 +87,7 @@ class InternalInventoryServiceTest {
 
         assertThat(response.getSuccess()).isTrue();
         assertThat(response.getData().getStatus()).isEqualTo("RESERVED");
-        assertThat(inventory.getAvailableQuantity()).isEqualTo(45);
+        verify(inventoryRepository).reserveStock(skuId, 5);
         verify(stockReservationRepository).save(any(StockReservation.class));
     }
 
