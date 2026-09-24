@@ -29,7 +29,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -489,6 +491,41 @@ public class ProductService {
                 .skuCode(sku.getSkuCode())
                 .build();
 
+    }
+
+    /**
+     * <p>Retrieves a batch of SKU snapshots by their IDs.</p>
+     *
+     * @param skuIds list of SKU UUIDs to fetch
+     * @return list of {@link SkuResponse} snapshots for the found SKUs
+     */
+    @Transactional(readOnly = true)
+    public List<SkuResponse> getSkusBatch(List<UUID> skuIds) {
+        if (skuIds == null || skuIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<UUID> distinctSkuIds = skuIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (distinctSkuIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Sku> skus = skuRepository.findAllByIdInWithProduct(distinctSkuIds);
+
+        return skus.stream()
+                .map(sku -> SkuResponse.builder()
+                        .id(sku.getId())
+                        .skuCode(sku.getSkuCode())
+                        .color(sku.getColor())
+                        .size(sku.getSize())
+                        .price(sku.getPrice())
+                        .productName(sku.getProduct() != null ? sku.getProduct().getTitle() : null)
+                        .build())
+                .toList();
     }
 }
 

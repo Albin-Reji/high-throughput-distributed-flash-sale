@@ -111,6 +111,16 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
+    @ExceptionHandler(io.github.resilience4j.circuitbreaker.CallNotPermittedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCallNotPermitted(io.github.resilience4j.circuitbreaker.CallNotPermittedException ex) {
+        log.warn("Circuit breaker open: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.<Void>builder()
+                        .success(false)
+                        .message("Downstream service is temporarily unavailable. Circuit breaker is OPEN: " + ex.getCausingCircuitBreakerName())
+                        .build());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
         log.error("Unexpected error occurred in order-service", ex);

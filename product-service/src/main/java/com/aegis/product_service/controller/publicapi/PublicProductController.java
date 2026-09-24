@@ -14,6 +14,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -96,5 +97,11 @@ public class PublicProductController {
     public SkuResponse isSkuExist(@PathVariable("skuId") UUID skuId){
         log.info("The /skus/{skuId} called In PRODUCT-SERVICE with Id: {}", skuId);
         return productService.isSkuExist(skuId);
+    }
+
+    @PostMapping("/skus/batch")
+    public ResponseEntity<List<SkuResponse>> getSkusBatch(@RequestBody(required = false) List<UUID> skuIds) {
+        log.info("Batch SKU fetch called with {} SKU IDs", skuIds != null ? skuIds.size() : 0);
+        return ResponseEntity.ok(productService.getSkusBatch(skuIds));
     }
 }
