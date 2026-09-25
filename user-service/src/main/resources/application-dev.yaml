@@ -60,6 +60,10 @@ keycloak:
 # server configuration
 server:
     port: ${SERVER_PORT:8081}
+    max-http-request-header-size: 16KB
+    tomcat:
+        max-http-form-post-size: 2MB
+        max-swallow-size: 2MB
 
 # internal webhook API key (shared secret with Keycloak SPI)
 internal:

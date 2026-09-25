@@ -65,6 +65,10 @@ keycloak:
 # server configuration
 server:
   port: ${SERVER_PORT:8084}
+  max-http-request-header-size: 16KB
+  tomcat:
+    max-http-form-post-size: 2MB
+    max-swallow-size: 2MB
 
 service:
   product:
