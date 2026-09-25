@@ -109,4 +109,16 @@ public class GlobalExceptionHandler {
         }
 
 
+        @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+        public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceeded(
+                org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+
+                log.warn("Payload too large: {}", ex.getMessage());
+
+                return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                        .body(ApiResponse.<Void>builder()
+                                .success(false)
+                                .message("Payload too large: Maximum request payload size of 2MB exceeded")
+                                .build());
+        }
 }
