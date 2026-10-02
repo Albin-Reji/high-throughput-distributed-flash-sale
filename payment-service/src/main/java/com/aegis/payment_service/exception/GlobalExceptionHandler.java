@@ -48,6 +48,15 @@ public class GlobalExceptionHandler {
                         .message("Payload too large: Maximum request payload size of 2MB exceeded")
                         .build());
     }
+    @ExceptionHandler(PaymentGatewayException.class)
+    public ResponseEntity<ApiResponse<Void>> handlePaymentGatewayException(PaymentGatewayException ex) {
+        log.error("Payment gateway error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ApiResponse.<Void>builder()
+                        .success(false)
+                        .message("Payment gateway error: " + ex.getMessage())
+                        .build());
+    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {

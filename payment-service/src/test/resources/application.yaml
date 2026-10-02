@@ -27,3 +27,8 @@ server:
   tomcat:
     max-http-form-post-size: 2MB
     max-swallow-size: 2MB
+
+# razorpay - dummy values for unit tests (RazorpayClient bean is mocked)
+razorpay:
+  key-id: test_key_placeholder
+  key-secret: test_secret_placeholder
