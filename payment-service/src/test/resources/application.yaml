@@ -32,3 +32,4 @@ server:
 razorpay:
   key-id: test_key_placeholder
   key-secret: test_secret_placeholder
+  webhook-secret: test_webhook_secret_placeholder
