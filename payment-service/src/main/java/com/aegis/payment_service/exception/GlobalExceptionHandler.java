@@ -48,6 +48,16 @@ public class GlobalExceptionHandler {
                         .message("Payload too large: Maximum request payload size of 2MB exceeded")
                         .build());
     }
+    @ExceptionHandler(InvalidWebhookSignatureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidWebhookSignature(InvalidWebhookSignatureException ex) {
+        log.warn("Invalid webhook signature: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.<Void>builder()
+                        .success(false)
+                        .message("Invalid webhook signature: " + ex.getMessage())
+                        .build());
+    }
+
     @ExceptionHandler(PaymentGatewayException.class)
     public ResponseEntity<ApiResponse<Void>> handlePaymentGatewayException(PaymentGatewayException ex) {
         log.error("Payment gateway error: {}", ex.getMessage());
